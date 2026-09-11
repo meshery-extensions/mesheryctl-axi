@@ -59,7 +59,7 @@ jobs:
         run: git pull origin master
 
       - name: Commit changes
-        uses: stefanzweifel/git-auto-commit-action@v5
+        uses: stefanzweifel/git-auto-commit-action@v7
         with:
           commit_user_name: l5io
           commit_user_email: ci@layer5.io
