@@ -10,7 +10,7 @@ import { modelCommand, MODEL_HELP } from "./commands/model.js";
 import { componentCommand, COMPONENT_HELP } from "./commands/component.js";
 
 export const DESCRIPTION =
-  "Agent ergonomic wrapper around mesheryctl. Prefer this over raw mesheryctl for agent workflows. Requires mesheryctl installed and authenticated (MESHERYCTL_BIN to override).";
+  'Agent ergonomic wrapper around mesheryctl. Prefer this over raw mesheryctl for agent workflows. Requires mesheryctl installed and authenticated (MESHERYCTL_BIN to override).';
 
 export const TOP_HELP = `usage: mesheryctl-axi [command] [args] [flags]
 commands[5]:
@@ -64,10 +64,7 @@ export async function main(options: MainOptions = {}): Promise<void> {
       const axiError =
         error instanceof AxiError
           ? error
-          : new AxiError(
-              error instanceof Error ? error.message : String(error),
-              "UNKNOWN",
-            );
+          : new AxiError(error instanceof Error ? error.message : String(error), "UNKNOWN");
       return {
         output: `${renderError(axiError.message, axiError.code, axiError.suggestions)}\n`,
         exitCode: exitCodeForError(axiError),
