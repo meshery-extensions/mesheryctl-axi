@@ -31,6 +31,9 @@ describe("cli main", () => {
     expect(written).toContain("error");
     expect(written).toContain("VALIDATION_ERROR");
     expect(written).toContain("--totally-unknown");
+    expect(written).toContain(
+      "help[2]:\n  mesheryctl-axi connection list [flags]",
+    );
     // exitCode should be non-zero after error formatting
     expect(Number(process.exitCode ?? 0)).toBeGreaterThan(0);
     process.exitCode = prevExitCode;
