@@ -43,7 +43,7 @@ const viewSchema: FieldDef[] = [
 ];
 
 async function listComponents(args: string[]): Promise<string> {
-  const mArgs = ["component", "list", "--output-format", "json"];
+  const mArgs = ["component", "list"];
   const page = getFlag(args, "--page");
   const pagesize = getFlag(args, "--pagesize") ?? getFlag(args, "--limit");
   if (page) mArgs.push("--page", page);

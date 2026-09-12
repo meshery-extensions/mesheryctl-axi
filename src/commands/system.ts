@@ -45,8 +45,6 @@ async function systemStatus(): Promise<string> {
     const payload = await mesheryctlJson([
       "system",
       "status",
-      "--output-format",
-      "json",
     ]);
     detail = renderDetail("system_status", asObject(payload), statusSchema);
   } catch {
@@ -67,8 +65,6 @@ async function systemContext(): Promise<string> {
       "system",
       "context",
       "view",
-      "--output-format",
-      "json",
     ]);
     detail = renderDetail("system_context", asObject(payload), contextSchema);
   } catch {

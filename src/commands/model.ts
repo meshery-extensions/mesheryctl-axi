@@ -49,7 +49,7 @@ const viewSchema: FieldDef[] = [
 ];
 
 async function listModels(args: string[]): Promise<string> {
-  const mArgs = ["model", "list", "--output-format", "json"];
+  const mArgs = ["model", "list"];
   const page = getFlag(args, "--page");
   const pagesize = getFlag(args, "--pagesize") ?? getFlag(args, "--limit");
   if (page) mArgs.push("--page", page);

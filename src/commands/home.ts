@@ -31,15 +31,13 @@ export async function homeCommand(_args: string[]): Promise<string> {
   const blocks: string[] = [];
 
   const [statusRaw, contextRaw] = await Promise.all([
-    mesheryctlRaw(["system", "status", "--output-format", "json"]).catch(
+    mesheryctlRaw(["system", "status"]).catch(
       () => null,
     ),
     mesheryctlRaw([
       "system",
       "context",
       "view",
-      "--output-format",
-      "json",
     ]).catch(() => null),
   ]);
 
