@@ -1,6 +1,6 @@
-import { encode } from "@toon-format/toon";
 import { runAxiCli } from "axi-sdk-js";
 import { AxiError, exitCodeForError } from "./errors.js";
+import { renderError } from "./toon.js";
 import { VERSION } from "./version.js";
 import { homeCommand } from "./commands/home.js";
 import { connectionCommand, CONNECTION_HELP } from "./commands/connection.js";
@@ -69,13 +69,7 @@ export async function main(options: MainOptions = {}): Promise<void> {
               "UNKNOWN",
             );
       return {
-        output: `${encode({
-          error: axiError.message,
-          code: axiError.code,
-          ...(axiError.suggestions.length > 0
-            ? { help: axiError.suggestions }
-            : {}),
-        })}\n`,
+        output: `${renderError(axiError.message, axiError.code, axiError.suggestions)}\n`,
         exitCode: exitCodeForError(axiError),
       };
     },
