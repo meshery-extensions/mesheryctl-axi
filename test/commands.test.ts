@@ -20,7 +20,8 @@ describe("connection list/view", () => {
   it("renders TOON list with help[]", async () => {
     setMesheryctlRunner(async (_bin, args) => {
       expect(args).toContain("connection");
-      expect(args).toContain("--output-format");
+      expect(args).not.toContain("--output-format");
+      expect(args).not.toContain("exp");
       return ok(
         JSON.stringify({
           connections: [
@@ -95,21 +96,30 @@ describe("model content is never TOON", () => {
 
 describe("empty states across resources", () => {
   it("design list empty", async () => {
-    setMesheryctlRunner(async () => ok(JSON.stringify({ designs: [] })));
+    setMesheryctlRunner(async (_bin, args) => {
+      expect(args).not.toContain("--output-format");
+      return ok(JSON.stringify({ designs: [] }));
+    });
     const out = await designCommand(["list"]);
     expect(out).toContain("designs: 0");
     expect(out).toMatch(/help\[\d+\]:/);
   });
 
   it("model list empty", async () => {
-    setMesheryctlRunner(async () => ok(JSON.stringify({ models: [] })));
+    setMesheryctlRunner(async (_bin, args) => {
+      expect(args).not.toContain("--output-format");
+      return ok(JSON.stringify({ models: [] }));
+    });
     const out = await modelCommand(["list"]);
     expect(out).toContain("models: 0");
     expect(out).toMatch(/help\[\d+\]:/);
   });
 
   it("component list empty", async () => {
-    setMesheryctlRunner(async () => ok(JSON.stringify({ components: [] })));
+    setMesheryctlRunner(async (_bin, args) => {
+      expect(args).not.toContain("--output-format");
+      return ok(JSON.stringify({ components: [] }));
+    });
     const out = await componentCommand(["list"]);
     expect(out).toContain("components: 0");
     expect(out).toMatch(/help\[\d+\]:/);
@@ -120,6 +130,7 @@ describe("system status/context", () => {
   it("renders TOON status with help[]", async () => {
     setMesheryctlRunner(async (_bin, args) => {
       if (args.includes("status")) {
+        expect(args).not.toContain("--output-format");
         return ok(
           JSON.stringify({
             status: "Running",
@@ -132,6 +143,26 @@ describe("system status/context", () => {
     });
     const out = await systemCommand(["status"]);
     expect(out).toContain("system_status");
+    expect(out).toMatch(/help\[\d+\]:/);
+  });
+
+  it("system context does not include --output-format", async () => {
+    setMesheryctlRunner(async (_bin, args) => {
+      if (args.includes("context")) {
+        expect(args).toEqual(["system", "context", "view"]);
+        return ok(
+          JSON.stringify({
+            name: "local",
+            endpoint: "http://localhost:9081",
+            token: "xyz",
+            platform: "kubernetes",
+          }),
+        );
+      }
+      return ok("{}");
+    });
+    const out = await systemCommand(["context"]);
+    expect(out).toContain("system_context");
     expect(out).toMatch(/help\[\d+\]:/);
   });
 });

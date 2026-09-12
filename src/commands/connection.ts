@@ -57,7 +57,7 @@ async function listConnections(args: string[]): Promise<string> {
         ? args[args.indexOf("--limit") + 1]
         : undefined;
 
-  const mArgs = ["exp", "connection", "list", "--output-format", "json"];
+  const mArgs = ["connection", "list"];
   if (page) mArgs.push("--page", page);
   if (pagesize) mArgs.push("--pagesize", pagesize);
 
@@ -86,7 +86,6 @@ async function viewConnection(args: string[]): Promise<string> {
   }
 
   const payload = await mesheryctlJson([
-    "exp",
     "connection",
     "view",
     id,

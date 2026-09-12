@@ -51,7 +51,7 @@ const viewSchema: FieldDef[] = [
 ];
 
 async function listDesigns(args: string[]): Promise<string> {
-  const mArgs = ["design", "list", "--output-format", "json"];
+  const mArgs = ["design", "list"];
   const page = getFlag(args, "--page");
   const pagesize = getFlag(args, "--pagesize") ?? getFlag(args, "--limit");
   if (page) mArgs.push("--page", page);
