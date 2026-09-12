@@ -36,6 +36,12 @@ jobs:
       - name: Install Dependencies
         run: make setup
 
+      - name: Lint Check
+        run: make lint
+
+      - name: Prettier Check
+        run: make format-check
+
       - name: Build Project
         run: make build
 
