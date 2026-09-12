@@ -31,7 +31,11 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "dev": "tsx bin/mesheryctl-axi.ts",
-    "prepublishOnly": "npm run build"
+    "prepublishOnly": "npm run build",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format:check": "prettier --check \"**/*.{ts,tsx,md}\"",
+    "format:write": "prettier --write \"**/*.{ts,tsx,md}\""
   },
   "license": "Apache-2.0",
   "engines": {
@@ -42,9 +46,16 @@
     "axi-sdk-js": "^0.1.11"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@types/node": "^26.5.0",
+    "@typescript/native": "npm:typescript@^7.0.2",
+    "eslint": "^10.10.0",
+    "globals": "^17.12.0",
+    "prettier": "^3.9.6",
+    "prettier-plugin-organize-imports": "^4.3.0",
     "tsx": "^4.0.0",
-    "typescript": "^7.0.2",
+    "typescript": "npm:@typescript/typescript6@^6.0.2",
+    "typescript-eslint": "^8.70.0",
     "vitest": "^5.0.0"
   },
   "homepage": "https://github.com/meshery-extensions/mesheryctl-axi#readme",
