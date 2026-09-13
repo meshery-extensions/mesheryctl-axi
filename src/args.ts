@@ -7,16 +7,20 @@ function flagEqualsPrefix(flag: string): string {
 /** Get a flag's value from --flag value or --flag=value without modifying args. */
 export function getFlag(args: string[], name: string): string | undefined {
   const equalsPrefix = flagEqualsPrefix(name);
+
   for (let i = 0; i < args.length; i++) {
     const arg = args[i];
+
     if (arg === name) {
       if (i + 1 >= args.length) return undefined;
       return args[i + 1].startsWith('-') ? undefined : args[i + 1];
     }
+
     if (arg.startsWith(equalsPrefix)) {
       return arg.slice(equalsPrefix.length);
     }
   }
+
   return undefined;
 }
 
@@ -27,10 +31,13 @@ export function getFlagValues(
 ): string[] {
   const values: string[] = [];
   const nameSet = new Set(names);
+
   for (let i = 0; i < args.length; i++) {
     const arg = args[i];
+
     if (nameSet.has(arg)) {
       const value = args[i + 1];
+
       if (value !== undefined && !value.startsWith('-')) {
         values.push(
           ...value
@@ -39,11 +46,13 @@ export function getFlagValues(
             .filter(Boolean),
         );
       }
+
       continue;
     }
 
     for (const name of names) {
       const prefix = flagEqualsPrefix(name);
+
       if (arg.startsWith(prefix)) {
         values.push(
           ...arg
