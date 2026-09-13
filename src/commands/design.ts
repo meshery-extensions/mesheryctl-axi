@@ -9,13 +9,13 @@ import {
   renderHelp,
   renderList,
   renderOutput,
-  type FieldDef
+  type FieldDef,
 } from '../toon.js';
 
 export const DESIGN_FLAGS: Record<string, readonly string[]> = {
   list: ['--page', '--pagesize', '--limit'],
   view: [],
-  content: ['--format']
+  content: ['--format'],
 };
 
 export const DESIGN_HELP = `usage: mesheryctl-axi design <subcommand>
@@ -38,7 +38,7 @@ const listSchema: FieldDef[] = [
   field('name'),
   field('user_id', 'user'),
   field('created_at', 'created'),
-  field('updated_at', 'updated')
+  field('updated_at', 'updated'),
 ];
 
 const viewSchema: FieldDef[] = [
@@ -47,7 +47,7 @@ const viewSchema: FieldDef[] = [
   field('user_id', 'user'),
   field('visibility'),
   field('created_at', 'created'),
-  field('updated_at', 'updated')
+  field('updated_at', 'updated'),
 ];
 
 async function listDesigns(args: string[]): Promise<string> {
@@ -62,7 +62,7 @@ async function listDesigns(args: string[]): Promise<string> {
   const isEmpty = items.length === 0;
   return renderOutput([
     isEmpty ? emptyState('designs') : renderList('designs', items, listSchema),
-    renderHelp(getSuggestions({ domain: 'design', action: 'list', isEmpty }))
+    renderHelp(getSuggestions({ domain: 'design', action: 'list', isEmpty })),
   ]);
 }
 
@@ -71,13 +71,13 @@ async function viewDesign(args: string[]): Promise<string> {
   if (!name) {
     throw new AxiError(
       'Design name is required: mesheryctl-axi design view <name>',
-      'VALIDATION_ERROR'
+      'VALIDATION_ERROR',
     );
   }
   const payload = await mesheryctlJson(['design', 'view', name, '--output-format', 'json']);
   return renderOutput([
     renderDetail('design', asObject(payload), viewSchema),
-    renderHelp(getSuggestions({ domain: 'design', action: 'view' }))
+    renderHelp(getSuggestions({ domain: 'design', action: 'view' })),
   ]);
 }
 
@@ -89,7 +89,7 @@ async function contentDesign(args: string[]): Promise<string> {
   if (!name) {
     throw new AxiError(
       'Design name is required: mesheryctl-axi design content <name> [--format yaml|json]',
-      'VALIDATION_ERROR'
+      'VALIDATION_ERROR',
     );
   }
   const format = (getFlag(args, '--format') ?? 'yaml').toLowerCase();
@@ -120,7 +120,7 @@ export async function designCommand(args: string[]): Promise<string> {
     default:
       throw new AxiError(`Unknown subcommand: ${sub}`, 'VALIDATION_ERROR', [
         'Available subcommands: list, view, content',
-        'mesheryctl-axi design --help'
+        'mesheryctl-axi design --help',
       ]);
   }
 }

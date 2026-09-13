@@ -41,7 +41,7 @@ export function rejectUnknownFlags(
   args: string[],
   known: readonly string[],
   command: string,
-  sub: string
+  sub: string,
 ): void {
   const knownSet = new Set(known);
   const unknown: string[] = [];
@@ -59,6 +59,6 @@ export function rejectUnknownFlags(
   throw new AxiError(
     `unknown flag${unknown.length > 1 ? 's' : ''} for mesheryctl-axi ${command} ${sub}: ${list}`,
     'VALIDATION_ERROR',
-    [`mesheryctl-axi ${command} ${sub} [flags]`, `mesheryctl-axi ${command} ${sub} --help`]
+    [`mesheryctl-axi ${command} ${sub} [flags]`, `mesheryctl-axi ${command} ${sub} --help`],
   );
 }

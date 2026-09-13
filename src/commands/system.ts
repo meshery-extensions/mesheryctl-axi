@@ -7,7 +7,7 @@ import { field, renderDetail, renderHelp, renderOutput, type FieldDef } from '..
 
 export const SYSTEM_FLAGS: Record<string, readonly string[]> = {
   status: [],
-  context: []
+  context: [],
 };
 
 export const SYSTEM_HELP = `usage: mesheryctl-axi system <subcommand>
@@ -22,7 +22,7 @@ const statusSchema: FieldDef[] = [
   field('status'),
   field('version'),
   field('platform'),
-  field('provider')
+  field('provider'),
 ];
 
 const contextSchema: FieldDef[] = [
@@ -30,7 +30,7 @@ const contextSchema: FieldDef[] = [
   field('endpoint'),
   field('token'),
   field('platform'),
-  field('channel')
+  field('channel'),
 ];
 
 async function systemStatus(): Promise<string> {
@@ -57,7 +57,7 @@ async function systemContext(): Promise<string> {
   }
   return renderOutput([
     detail,
-    renderHelp(getSuggestions({ domain: 'system', action: 'context' }))
+    renderHelp(getSuggestions({ domain: 'system', action: 'context' })),
   ]);
 }
 
@@ -76,7 +76,7 @@ export async function systemCommand(args: string[]): Promise<string> {
     default:
       throw new AxiError(`Unknown subcommand: ${sub}`, 'VALIDATION_ERROR', [
         'Available subcommands: status, context',
-        'mesheryctl-axi system --help'
+        'mesheryctl-axi system --help',
       ]);
   }
 }

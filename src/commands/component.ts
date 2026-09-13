@@ -9,12 +9,12 @@ import {
   renderHelp,
   renderList,
   renderOutput,
-  type FieldDef
+  type FieldDef,
 } from '../toon.js';
 
 export const COMPONENT_FLAGS: Record<string, readonly string[]> = {
   list: ['--page', '--pagesize', '--limit'],
-  view: []
+  view: [],
 };
 
 export const COMPONENT_HELP = `usage: mesheryctl-axi component <subcommand>
@@ -34,7 +34,7 @@ const viewSchema: FieldDef[] = [
   field('kind'),
   field('model'),
   field('version'),
-  field('apiVersion', 'api_version')
+  field('apiVersion', 'api_version'),
 ];
 
 async function listComponents(args: string[]): Promise<string> {
@@ -49,7 +49,7 @@ async function listComponents(args: string[]): Promise<string> {
   const isEmpty = items.length === 0;
   return renderOutput([
     isEmpty ? emptyState('components') : renderList('components', items, listSchema),
-    renderHelp(getSuggestions({ domain: 'component', action: 'list', isEmpty }))
+    renderHelp(getSuggestions({ domain: 'component', action: 'list', isEmpty })),
   ]);
 }
 
@@ -58,13 +58,13 @@ async function viewComponent(args: string[]): Promise<string> {
   if (!name) {
     throw new AxiError(
       'Component name is required: mesheryctl-axi component view <name>',
-      'VALIDATION_ERROR'
+      'VALIDATION_ERROR',
     );
   }
   const payload = await mesheryctlJson(['component', 'view', name, '--output-format', 'json']);
   return renderOutput([
     renderDetail('component', asObject(payload), viewSchema),
-    renderHelp(getSuggestions({ domain: 'component', action: 'view' }))
+    renderHelp(getSuggestions({ domain: 'component', action: 'view' })),
   ]);
 }
 
@@ -83,7 +83,7 @@ export async function componentCommand(args: string[]): Promise<string> {
     default:
       throw new AxiError(`Unknown subcommand: ${sub}`, 'VALIDATION_ERROR', [
         'Available subcommands: list, view',
-        'mesheryctl-axi component --help'
+        'mesheryctl-axi component --help',
       ]);
   }
 }

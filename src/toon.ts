@@ -42,7 +42,7 @@ export function custom(as: string, fn: (item: Record<string, unknown>) => unknow
 
 export function extract(
   item: Record<string, unknown>,
-  schema: FieldDef[]
+  schema: FieldDef[],
 ): Record<string, unknown> {
   const result: Record<string, unknown> = {};
 
@@ -65,7 +65,7 @@ export function extract(
         if (Array.isArray(arr) && arr.length > 0) {
           result[outputKey] = arr
             .map((x: unknown) =>
-              typeof x === 'string' ? x : (x as Record<string, unknown>)[def.subkey]
+              typeof x === 'string' ? x : (x as Record<string, unknown>)[def.subkey],
             )
             .join(',');
         } else {
@@ -99,7 +99,7 @@ export function extract(
 export function renderList(
   label: string,
   items: Record<string, unknown>[],
-  schema: FieldDef[]
+  schema: FieldDef[],
 ): string {
   const extracted = items.map((item) => extract(item, schema));
   return encode({ [label]: extracted });
@@ -109,7 +109,7 @@ export function renderList(
 export function renderDetail(
   label: string,
   item: Record<string, unknown>,
-  schema: FieldDef[]
+  schema: FieldDef[],
 ): string {
   const extracted = extract(item, schema);
   return encode({ [label]: extracted });

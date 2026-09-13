@@ -11,8 +11,8 @@ export function mesheryctlNotInstalledError(): AxiError {
     'MESHERYCTL_NOT_INSTALLED',
     [
       'Install mesheryctl: https://docs.meshery.io/installation',
-      'Or set MESHERYCTL_BIN to an executable mesheryctl binary'
-    ]
+      'Or set MESHERYCTL_BIN to an executable mesheryctl binary',
+    ],
   );
 }
 
@@ -22,7 +22,7 @@ export function mapMesheryctlError(stderr: string, exitCode: number): AxiError {
 
   if (/auth|login|token|unauthorized|unauthenticated/i.test(text)) {
     return new AxiError(first || 'Meshery authentication required', 'AUTH_REQUIRED', [
-      'Run `mesheryctl system login` (or provider login) and retry'
+      'Run `mesheryctl system login` (or provider login) and retry',
     ]);
   }
   if (/not found|no such|does not exist/i.test(text)) {
@@ -30,5 +30,3 @@ export function mapMesheryctlError(stderr: string, exitCode: number): AxiError {
   }
   return new AxiError(first || `mesheryctl exited with code ${exitCode}`, 'UNKNOWN');
 }
-
-

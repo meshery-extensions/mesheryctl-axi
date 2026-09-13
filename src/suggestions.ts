@@ -14,7 +14,7 @@ export function getSuggestions(ctx: SuggestionContext): string[] {
       'mesheryctl-axi connection list',
       'mesheryctl-axi system status',
       'mesheryctl-axi design list',
-      'mesheryctl-axi model list'
+      'mesheryctl-axi model list',
     ];
   }
 

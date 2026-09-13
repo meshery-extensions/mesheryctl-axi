@@ -8,7 +8,7 @@ import {
   renderError,
   renderHelp,
   renderList,
-  renderOutput
+  renderOutput,
 } from '../src/toon.js';
 
 describe('TOON encoding', () => {
@@ -21,7 +21,7 @@ describe('TOON encoding', () => {
   it('renderList encodes a labeled array as TOON', () => {
     const items = [
       { id: '1', name: 'a' },
-      { id: '2', name: 'b' }
+      { id: '2', name: 'b' },
     ];
     const toon = renderList('connections', items, [field('id'), field('name')]);
     expect(toon).toContain('connections');

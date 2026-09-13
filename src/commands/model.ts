@@ -9,13 +9,13 @@ import {
   renderHelp,
   renderList,
   renderOutput,
-  type FieldDef
+  type FieldDef,
 } from '../toon.js';
 
 export const MODEL_FLAGS: Record<string, readonly string[]> = {
   list: ['--page', '--pagesize', '--limit', '--count'],
   view: [],
-  content: ['--format']
+  content: ['--format'],
 };
 
 export const MODEL_HELP = `usage: mesheryctl-axi model <subcommand>
@@ -37,7 +37,7 @@ const listSchema: FieldDef[] = [
   field('name'),
   field('version'),
   field('category'),
-  field('displayname', 'display')
+  field('displayname', 'display'),
 ];
 
 const viewSchema: FieldDef[] = [
@@ -45,7 +45,7 @@ const viewSchema: FieldDef[] = [
   field('version'),
   field('category'),
   field('displayname', 'display'),
-  field('registrant')
+  field('registrant'),
 ];
 
 async function listModels(args: string[]): Promise<string> {
@@ -61,7 +61,7 @@ async function listModels(args: string[]): Promise<string> {
   const isEmpty = items.length === 0;
   return renderOutput([
     isEmpty ? emptyState('models') : renderList('models', items, listSchema),
-    renderHelp(getSuggestions({ domain: 'model', action: 'list', isEmpty }))
+    renderHelp(getSuggestions({ domain: 'model', action: 'list', isEmpty })),
   ]);
 }
 
@@ -70,13 +70,13 @@ async function viewModel(args: string[]): Promise<string> {
   if (!name) {
     throw new AxiError(
       'Model name is required: mesheryctl-axi model view <name>',
-      'VALIDATION_ERROR'
+      'VALIDATION_ERROR',
     );
   }
   const payload = await mesheryctlJson(['model', 'view', name, '--output-format', 'json']);
   return renderOutput([
     renderDetail('model', asObject(payload), viewSchema),
-    renderHelp(getSuggestions({ domain: 'model', action: 'view' }))
+    renderHelp(getSuggestions({ domain: 'model', action: 'view' })),
   ]);
 }
 
@@ -88,7 +88,7 @@ async function contentModel(args: string[]): Promise<string> {
   if (!name) {
     throw new AxiError(
       'Model name is required: mesheryctl-axi model content <name> [--format yaml|json]',
-      'VALIDATION_ERROR'
+      'VALIDATION_ERROR',
     );
   }
   const format = (getFlag(args, '--format') ?? 'json').toLowerCase();
@@ -117,7 +117,7 @@ export async function modelCommand(args: string[]): Promise<string> {
     default:
       throw new AxiError(`Unknown subcommand: ${sub}`, 'VALIDATION_ERROR', [
         'Available subcommands: list, view, content',
-        'mesheryctl-axi model --help'
+        'mesheryctl-axi model --help',
       ]);
   }
 }

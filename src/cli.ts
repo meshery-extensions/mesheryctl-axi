@@ -34,7 +34,7 @@ const COMMAND_HELP: Record<string, string> = {
   system: SYSTEM_HELP,
   design: DESIGN_HELP,
   model: MODEL_HELP,
-  component: COMPONENT_HELP
+  component: COMPONENT_HELP,
 };
 
 type CliStdout = Pick<NodeJS.WriteStream, 'write'>;
@@ -57,7 +57,7 @@ export async function main(options: MainOptions = {}): Promise<void> {
       system: systemCommand,
       design: designCommand,
       model: modelCommand,
-      component: componentCommand
+      component: componentCommand,
     },
     getCommandHelp: (command) => COMMAND_HELP[command],
     formatError: (error) => {
@@ -69,10 +69,10 @@ export async function main(options: MainOptions = {}): Promise<void> {
         output: `${encode({
           error: axiError.message,
           code: axiError.code,
-          ...(axiError.suggestions.length > 0 ? { help: axiError.suggestions } : {})
+          ...(axiError.suggestions.length > 0 ? { help: axiError.suggestions } : {}),
         })}\n`,
-        exitCode: exitCodeForError(axiError)
+        exitCode: exitCodeForError(axiError),
       };
-    }
+    },
   });
 }

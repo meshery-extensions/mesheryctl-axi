@@ -15,7 +15,7 @@ describe('cli main', () => {
       write: (chunk: string) => {
         written += chunk;
         return true;
-      }
+      },
     };
 
     // Patch process.exitCode indirectly: runAxiCli sets exit and writes error output.
@@ -23,7 +23,7 @@ describe('cli main', () => {
     setMesheryctlRunner(async () => ({
       stdout: '[]',
       stderr: '',
-      exitCode: 0
+      exitCode: 0,
     }));
 
     await main({ argv: ['connection', 'list', '--totally-unknown'], stdout });
@@ -42,12 +42,12 @@ describe('cli main', () => {
       write: (chunk: string) => {
         written += chunk;
         return true;
-      }
+      },
     };
     setMesheryctlRunner(async () => ({
       stdout: '',
       stderr: 'nope',
-      exitCode: 1
+      exitCode: 1,
     }));
     await main({ argv: [], stdout });
     expect(written.toLowerCase()).toContain('description');

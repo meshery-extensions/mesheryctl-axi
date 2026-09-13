@@ -4,6 +4,7 @@ import js from '@eslint/js';
 import globals from 'globals';
 import { defineConfig } from 'eslint/config';
 import tseslint from 'typescript-eslint';
+import prettierRecommended from 'eslint-plugin-prettier/recommended';
 
 export default defineConfig([
   {
@@ -18,6 +19,7 @@ export default defineConfig([
     extends: [
       js.configs.recommended,
       tseslint.configs.recommended,
+      prettierRecommended,
     ],
     languageOptions: {
       globals: {
@@ -25,10 +27,16 @@ export default defineConfig([
       },
     },
     rules: {
+      'no-trailing-spaces': 'error',
+      'block-spacing': 'error',
+      'brace-style': ['error', '1tbs'],
+      'no-console': 'off',
+
       '@typescript-eslint/no-unused-vars': [
         'error',
         {
           argsIgnorePattern: '^_',
+          varsIgnorePattern: '^_',
         },
       ],
     },

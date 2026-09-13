@@ -7,14 +7,14 @@ const statusSchema: FieldDef[] = [
   field('status'),
   field('version'),
   field('platform'),
-  field('provider')
+  field('provider'),
 ];
 
 const contextSchema: FieldDef[] = [
   field('name'),
   field('endpoint'),
   field('token'),
-  field('platform')
+  field('platform'),
 ];
 
 /**
@@ -26,7 +26,7 @@ export async function homeCommand(_args: string[]): Promise<string> {
 
   const [statusRaw, contextRaw] = await Promise.all([
     mesheryctlRaw(['system', 'status', '--output-format', 'json']).catch(() => null),
-    mesheryctlRaw(['system', 'context', 'view', '--output-format', 'json']).catch(() => null)
+    mesheryctlRaw(['system', 'context', 'view', '--output-format', 'json']).catch(() => null),
   ]);
 
   if (statusRaw && statusRaw.exitCode === 0 && statusRaw.stdout.trim()) {

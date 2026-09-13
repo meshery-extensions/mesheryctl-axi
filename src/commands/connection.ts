@@ -10,12 +10,12 @@ import {
   renderHelp,
   renderList,
   renderOutput,
-  type FieldDef
+  type FieldDef,
 } from '../toon.js';
 
 export const CONNECTION_FLAGS: Record<string, readonly string[]> = {
   list: ['--page', '--pagesize', '--limit'],
-  view: []
+  view: [],
 };
 
 export const CONNECTION_HELP = `usage: mesheryctl-axi connection <subcommand>
@@ -33,7 +33,7 @@ const listSchema: FieldDef[] = [
   field('name'),
   lower('status'),
   field('kind'),
-  field('type')
+  field('type'),
 ];
 
 const viewSchema: FieldDef[] = [
@@ -43,7 +43,7 @@ const viewSchema: FieldDef[] = [
   field('kind'),
   field('type'),
   field('created_at', 'created'),
-  field('updated_at', 'updated')
+  field('updated_at', 'updated'),
 ];
 
 async function listConnections(args: string[]): Promise<string> {
@@ -64,12 +64,12 @@ async function listConnections(args: string[]): Promise<string> {
   const suggestions = getSuggestions({
     domain: 'connection',
     action: 'list',
-    isEmpty
+    isEmpty,
   });
 
   return renderOutput([
     isEmpty ? emptyState('connections') : renderList('connections', items, listSchema),
-    renderHelp(suggestions)
+    renderHelp(suggestions),
   ]);
 }
 
@@ -78,7 +78,7 @@ async function viewConnection(args: string[]): Promise<string> {
   if (!id) {
     throw new AxiError(
       'Connection id is required: mesheryctl-axi connection view <id>',
-      'VALIDATION_ERROR'
+      'VALIDATION_ERROR',
     );
   }
 
@@ -88,12 +88,12 @@ async function viewConnection(args: string[]): Promise<string> {
     'view',
     id,
     '--output-format',
-    'json'
+    'json',
   ]);
   const item = asObject(payload);
   const suggestions = getSuggestions({
     domain: 'connection',
-    action: 'view'
+    action: 'view',
   });
 
   return renderOutput([renderDetail('connection', item, viewSchema), renderHelp(suggestions)]);
@@ -114,7 +114,7 @@ export async function connectionCommand(args: string[]): Promise<string> {
     default:
       throw new AxiError(`Unknown subcommand: ${sub}`, 'VALIDATION_ERROR', [
         'Available subcommands: list, view',
-        'mesheryctl-axi connection --help'
+        'mesheryctl-axi connection --help',
       ]);
   }
 }

@@ -5,7 +5,7 @@ import { AxiError } from '../src/errors.js';
 describe('unknown flags', () => {
   it('allows known flags', () => {
     expect(() =>
-      rejectUnknownFlags(['--page', '1'], ['--page', '--limit'], 'design', 'list')
+      rejectUnknownFlags(['--page', '1'], ['--page', '--limit'], 'design', 'list'),
     ).not.toThrow();
   });
 

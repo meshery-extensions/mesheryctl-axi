@@ -23,8 +23,8 @@ describe('connection list/view', () => {
       expect(args).toContain('--output-format');
       return ok(
         JSON.stringify({
-          connections: [{ id: 'c1', name: 'k8s', status: 'CONNECTED', kind: 'kubernetes' }]
-        })
+          connections: [{ id: 'c1', name: 'k8s', status: 'CONNECTED', kind: 'kubernetes' }],
+        }),
       );
     });
     const out = await connectionCommand(['list']);
@@ -103,8 +103,8 @@ describe('system status/context', () => {
           JSON.stringify({
             status: 'Running',
             version: '0.8.0',
-            platform: 'docker'
-          })
+            platform: 'docker',
+          }),
         );
       }
       return ok('{}');
@@ -120,7 +120,7 @@ describe('home', () => {
     setMesheryctlRunner(async () => ({
       stdout: '',
       stderr: 'fail',
-      exitCode: 1
+      exitCode: 1,
     }));
     const out = await homeCommand([]);
     expect(out).toContain('system_status');
@@ -132,19 +132,19 @@ describe('home', () => {
 describe('unknown flags non-zero path via commands', () => {
   it('design list unknown flag', async () => {
     await expect(designCommand(['list', '--bogus'])).rejects.toMatchObject({
-      code: 'VALIDATION_ERROR'
+      code: 'VALIDATION_ERROR',
     });
   });
 
   it('model view unknown flag', async () => {
     await expect(modelCommand(['view', 'x', '--weird'])).rejects.toMatchObject({
-      code: 'VALIDATION_ERROR'
+      code: 'VALIDATION_ERROR',
     });
   });
 
   it('component list unknown flag', async () => {
     await expect(componentCommand(['list', '--nope'])).rejects.toMatchObject({
-      code: 'VALIDATION_ERROR'
+      code: 'VALIDATION_ERROR',
     });
   });
 });
