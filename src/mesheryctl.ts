@@ -13,7 +13,7 @@ const MAX_BUFFER_BYTES = 10 * 1024 * 1024; // 10 MB
 export type MesheryctlRunner = (
   bin: string,
   args: string[],
-  env: NodeJS.ProcessEnv
+  env: NodeJS.ProcessEnv,
 ) => Promise<ExecResult>;
 
 let runnerOverride: MesheryctlRunner | undefined;
@@ -34,7 +34,7 @@ function missingMesheryctlError(): AxiError {
   if (overridden) {
     return new AxiError(
       `MESHERYCTL_BIN is not an executable mesheryctl binary: ${overridden}`,
-      'MESHERYCTL_NOT_INSTALLED'
+      'MESHERYCTL_NOT_INSTALLED',
     );
   }
   return mesheryctlNotInstalledError();
@@ -47,7 +47,7 @@ function childEnv(): NodeJS.ProcessEnv {
     // Discourage interactive prompts in mesheryctl / dependent libraries.
     CI: process.env['CI'] ?? '1',
     MESHERYCTL_AXI: '1',
-    TERM: process.env['TERM'] ?? 'dumb'
+    TERM: process.env['TERM'] ?? 'dumb',
   };
 }
 
@@ -60,7 +60,7 @@ function defaultRunner(bin: string, args: string[], env: NodeJS.ProcessEnv): Pro
       {
         maxBuffer: MAX_BUFFER_BYTES,
         env,
-        encoding: 'utf8'
+        encoding: 'utf8',
       },
       (error: ExecFileException | null, stdout: string, stderr: string) => {
         if (error && (error as NodeJS.ErrnoException).code === 'ENOENT') {
@@ -72,9 +72,9 @@ function defaultRunner(bin: string, args: string[], env: NodeJS.ProcessEnv): Pro
         resolve({
           stdout: stdout ?? '',
           stderr: stderr ?? '',
-          exitCode
+          exitCode,
         });
-      }
+      },
     );
   });
 }

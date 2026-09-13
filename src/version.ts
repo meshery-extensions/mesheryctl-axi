@@ -6,7 +6,7 @@ function readPackageVersion(): string {
   const here = dirname(fileURLToPath(import.meta.url));
   for (const candidate of [
     join(here, '..', 'package.json'),
-    join(here, '..', '..', 'package.json')
+    join(here, '..', '..', 'package.json'),
   ]) {
     if (!existsSync(candidate)) continue;
     const parsed = JSON.parse(readFileSync(candidate, 'utf-8')) as {
