@@ -41,7 +41,7 @@ done, publishing a release fails at the `Require NPM_TOKEN` step by design. Trac
 1. **`NPM_TOKEN` repository secret (required).** Create an npm token that can publish
    the unscoped package `mesheryctl-axi`, owned by the npm account that should own the
    package (the Meshery/Layer5 npm org account is preferred over a personal one):
-   - an npm **granular access token** with *Read and write* permission (for the very
+   - an npm **granular access token** with _Read and write_ permission (for the very
      first publish the package does not exist yet, so the token must be allowed to
      publish new packages for that account), or a classic **Automation** token.
    - Store it: `gh secret set NPM_TOKEN -R meshery-extensions/mesheryctl-axi`
@@ -70,10 +70,10 @@ done, publishing a release fails at the `Require NPM_TOKEN` step by design. Trac
 Semantic versioning, driven entirely by the labels on merged PRs
 ([`.github/release-drafter.yml`](../.github/release-drafter.yml) owns the mapping):
 
-| PR label | Bump |
-| --- | --- |
-| `major` | MAJOR |
-| `minor` | MINOR |
+| PR label                    | Bump                |
+| --------------------------- | ------------------- |
+| `major`                     | MAJOR               |
+| `minor`                     | MINOR               |
 | `patch` or no version label | PATCH (the default) |
 
 - With no previous release, Release Drafter drafts **`v0.1.0`**, matching the initial

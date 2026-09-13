@@ -19,7 +19,7 @@ Adapted from the `cut-release` skills of `meshery/schemas` and `layer5io/sistent
 Full reference: [`docs/release-procedure.md`](../../../docs/release-procedure.md).
 
 Publishing a release here is a one-action step: **flip the existing Release Drafter
-draft from draft to published.** Publishing the release *is* the npm publish.
+draft from draft to published.** Publishing the release _is_ the npm publish.
 
 - **Package:** `mesheryctl-axi` (unscoped, public), published with npm provenance.
 - **Repository:** `meshery-extensions/mesheryctl-axi`, release branch `master`.
@@ -130,7 +130,7 @@ Report the published version, the release URL, and the npm verification output.
 ## What to watch for
 
 - **Don't publish ahead of the drafter run** - the notes would omit the change being released.
-- **The release *is* the npm publish.** npm versions are permanent; treat publishing as production.
+- **The release _is_ the npm publish.** npm versions are permanent; treat publishing as production.
 - **Never hand-author the tag or notes.** If you are computing a version number, something is wrong.
 - **Restricted sessions.** Publishing is outward-facing and irreversible. If your session is not
   permitted to publish releases, hand step 4 to a maintainer with release rights.

@@ -1,4 +1,4 @@
-import { AxiError } from "./errors.js";
+import { AxiError } from './errors.js';
 
 function flagEqualsPrefix(flag: string): string {
   return `${flag}=`;
@@ -26,12 +26,9 @@ export function hasFlag(args: string[], flag: string): boolean {
 }
 
 /** Get the first positional arg (non-flag) starting from startIndex. */
-export function getPositional(
-  args: string[],
-  startIndex = 0,
-): string | undefined {
+export function getPositional(args: string[], startIndex = 0): string | undefined {
   for (let i = startIndex; i < args.length; i++) {
-    if (!args[i].startsWith("-")) return args[i];
+    if (!args[i].startsWith('-')) return args[i];
   }
   return undefined;
 }
@@ -50,21 +47,18 @@ export function rejectUnknownFlags(
   const unknown: string[] = [];
   for (let i = 0; i < args.length; i++) {
     const tok = args[i];
-    if (tok === "--") break;
-    if (!tok.startsWith("-")) continue;
-    const name = tok.split("=", 1)[0];
-    if (name === "--help" || name === "-h") continue;
+    if (tok === '--') break;
+    if (!tok.startsWith('-')) continue;
+    const name = tok.split('=', 1)[0];
+    if (name === '--help' || name === '-h') continue;
     if (knownSet.has(name)) continue;
     if (!unknown.includes(name)) unknown.push(name);
   }
   if (unknown.length === 0) return;
-  const list = unknown.join(", ");
+  const list = unknown.join(', ');
   throw new AxiError(
-    `unknown flag${unknown.length > 1 ? "s" : ""} for mesheryctl-axi ${command} ${sub}: ${list}`,
-    "VALIDATION_ERROR",
-    [
-      `mesheryctl-axi ${command} ${sub} [flags]`,
-      `mesheryctl-axi ${command} ${sub} --help`,
-    ],
+    `unknown flag${unknown.length > 1 ? 's' : ''} for mesheryctl-axi ${command} ${sub}: ${list}`,
+    'VALIDATION_ERROR',
+    [`mesheryctl-axi ${command} ${sub} [flags]`, `mesheryctl-axi ${command} ${sub} --help`],
   );
 }

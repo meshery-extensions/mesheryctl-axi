@@ -59,14 +59,14 @@ npx -y mesheryctl-axi model content <name> --format json
 
 ## Design notes
 
-| Concern | Behavior |
-| --- | --- |
-| List / view metadata | TOON |
-| Design / model **content** | Raw YAML or JSON only |
-| Unknown flags | Non-zero exit + structured TOON error |
-| Empty results | Definitive empty states (e.g. `connections: 0`) |
-| Success | Includes `help[]` suggestions |
-| Interactivity | Always non-interactive (no TTY prompts) |
+| Concern                    | Behavior                                        |
+| -------------------------- | ----------------------------------------------- |
+| List / view metadata       | TOON                                            |
+| Design / model **content** | Raw YAML or JSON only                           |
+| Unknown flags              | Non-zero exit + structured TOON error           |
+| Empty results              | Definitive empty states (e.g. `connections: 0`) |
+| Success                    | Includes `help[]` suggestions                   |
+| Interactivity              | Always non-interactive (no TTY prompts)         |
 
 ## Commands (v1)
 
