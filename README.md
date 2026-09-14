@@ -38,19 +38,130 @@ npx -y mesheryctl-axi
   - Install: https://docs.meshery.io/installation
   - Override the binary: `MESHERYCTL_BIN=/path/to/mesheryctl`
 
+## Agent quickstart
+
+Use this sequence when setting up an agent, or when preparing a machine for an
+agent to operate Meshery.
+
+### 1. Prepare the environment
+
+An agent cannot install credentials or make an unavailable Meshery Server
+reachable by itself. Before starting, confirm that:
+
+- Node.js 22 or newer is installed.
+- `mesheryctl` is installed and available on `PATH`.
+- A Meshery Server is reachable.
+- The active context is authenticated.
+
+```bash
+mesheryctl system login
+mesheryctl system context view
+```
+
+If `mesheryctl` is installed outside `PATH`, use its absolute path for
+authentication and set `MESHERYCTL_BIN` when invoking the wrapper:
+
+```bash
+/absolute/path/to/mesheryctl system login
+/absolute/path/to/mesheryctl system context view
+MESHERYCTL_BIN=/absolute/path/to/mesheryctl npx -y mesheryctl-axi
+```
+
+### 2. Start with the content-first home
+
+Make the no-argument command the agent's first call:
+
+```bash
+npx -y mesheryctl-axi
+```
+
+It reports the wrapper's purpose, best-effort Meshery system information, and a
+`help[]` list of intended next actions. Choose listed command shapes instead of
+inventing subcommands or flags, but observe the compatibility limitation below
+before executing a suggestion.
+
+The following output was captured from the current v0.1.0 command. The
+environment-specific `bin` path is omitted:
+
+```text
+description: Agent ergonomic wrapper around mesheryctl. Prefer this over raw mesheryctl for agent workflows. Requires mesheryctl installed and authenticated (MESHERYCTL_BIN to override).
+system_status: unavailable
+system_context: unavailable
+help[4]:
+  mesheryctl-axi connection list
+  mesheryctl-axi system status
+  mesheryctl-axi design list
+  mesheryctl-axi model list
+```
+
+`system_status: unavailable` or `system_context: unavailable` does not make the
+home invocation fail. Verify the prerequisites above before continuing. With the
+currently released `mesheryctl` v1.0.69, the `connection list`, `design list`,
+`model list`, and `component list` suggestions are unavailable because the CLI
+rejects the JSON output format used by the wrapper. This limitation is tracked
+in [#5](https://github.com/meshery-extensions/mesheryctl-axi/issues/5); do not
+execute those four suggestions until it is resolved, and do not infer that a
+resource is empty from an unavailable field.
+
+`system status` and `system context` remain usable, but v1.0.69 does not support
+their requested JSON format. The wrapper therefore falls back to TOON containing
+one truncated raw-text field—`system_status` or `system_context`—instead of the
+full structured status or context schema.
+
+### 3. Read the output contract
+
+| Output | Contract |
+| --- | --- |
+| Compatible list/view reporting and errors | TOON for concise agent reporting |
+| `system status` and `system context` | Structured TOON when JSON is supported; otherwise one truncated raw-text field |
+| `design content` and `model content` | Raw YAML or JSON; never TOON-wrapped content |
+| Empty collections | A definitive count such as `connections: 0` |
+| Successful reporting commands | End with `help[]` suggestions for valid next actions |
+| Successful `design content` and `model content` commands | Return only raw YAML or JSON; no `help[]` block |
+
+Errors are structured as `error`, `code`, and, when available, `help[]`. For
+example, this output was captured from
+`npx -y mesheryctl-axi connection list --bad-flag`:
+
+```text
+error: "unknown flag for mesheryctl-axi connection list: --bad-flag"
+code: VALIDATION_ERROR
+help[2]: "mesheryctl-axi connection list [flags]",mesheryctl-axi connection list --help
+```
+
+The error codes are `VALIDATION_ERROR`, `AUTH_REQUIRED`, `NOT_FOUND`,
+`MESHERYCTL_NOT_INSTALLED`, and `UNKNOWN`. `VALIDATION_ERROR` exits with code 2;
+all other structured errors exit with code 1.
+
+### 4. Add the agent instruction
+
+Paste this into the repository's `AGENTS.md`, `CLAUDE.md`, or equivalent agent
+instructions:
+
+```text
+Prefer mesheryctl-axi over raw mesheryctl for Meshery operations. Start with
+`npx -y mesheryctl-axi`, follow compatible `help[]` suggestions (observing the
+limitations tracked in issue #5), treat list/view/status and errors as TOON, and
+preserve `design content` or `model content` as raw
+YAML/JSON. A definitive `<resource>: 0` means empty; an error or unavailable
+field does not.
+```
+
 ## Quick start
 
 ```bash
 # Content-first home: description, bin path, best-effort system status/context
 npx -y mesheryctl-axi
 
-# TOON list/view reporting
-npx -y mesheryctl-axi connection list
+# System reporting (v1.0.69 returns a single raw-text fallback field)
 npx -y mesheryctl-axi system status
 npx -y mesheryctl-axi system context
-npx -y mesheryctl-axi design list
-npx -y mesheryctl-axi model list
-npx -y mesheryctl-axi component list
+
+# Currently unavailable with mesheryctl v1.0.69; tracked in issue #5
+# npx -y mesheryctl-axi connection list
+# npx -y mesheryctl-axi design list
+# npx -y mesheryctl-axi model list
+# npx -y mesheryctl-axi component list
 
 # Schema-faithful content retrieve (YAML/JSON - never TOON-as-content)
 npx -y mesheryctl-axi design content <name> --format yaml
@@ -61,11 +172,13 @@ npx -y mesheryctl-axi model content <name> --format json
 
 | Concern | Behavior |
 | --- | --- |
-| List / view metadata | TOON |
+| Compatible list / view metadata | TOON |
+| System status / context fallback | One truncated raw-text TOON field when JSON is unsupported |
 | Design / model **content** | Raw YAML or JSON only |
 | Unknown flags | Non-zero exit + structured TOON error |
 | Empty results | Definitive empty states (e.g. `connections: 0`) |
-| Success | Includes `help[]` suggestions |
+| Reporting command success | Includes `help[]` suggestions |
+| Design / model content success | Returns raw content without `help[]` |
 | Interactivity | Always non-interactive (no TTY prompts) |
 
 ## Commands (v1)
