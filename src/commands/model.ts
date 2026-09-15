@@ -1,6 +1,8 @@
 import { getFlag, getPositional, rejectUnknownFlags } from "../args.js";
 import { AxiError } from "../errors.js";
-import { asArray, asObject, mesheryctlExec, mesheryctlJson } from "../mesheryctl.js";
+import { asObject, mesheryctlExec, mesheryctlJson } from "../mesheryctl.js";
+import { API } from "../paths.js";
+import { listQueryFromFlags, serverGetJson } from "../server.js";
 import { getSuggestions } from "../suggestions.js";
 import {
   emptyState,
@@ -26,7 +28,7 @@ flags{list}:
 flags{content}:
   --format yaml|json (default json)
 notes:
-  content returns schema-faithful YAML/JSON - never TOON
+  content returns schema-faithful YAML/JSON — never TOON
 examples:
   mesheryctl-axi model list
   mesheryctl-axi model view <name>
@@ -48,16 +50,35 @@ const viewSchema: FieldDef[] = [
   field("registrant"),
 ];
 
-async function listModels(args: string[]): Promise<string> {
-  const mArgs = ["model", "list", "--output-format", "json"];
-  const page = getFlag(args, "--page");
-  const pagesize = getFlag(args, "--pagesize") ?? getFlag(args, "--limit");
-  if (page) mArgs.push("--page", page);
-  if (pagesize) mArgs.push("--pagesize", pagesize);
-  if (args.includes("--count")) mArgs.push("--count");
+function normalizeModel(item: Record<string, unknown>): Record<string, unknown> {
+  const category = item["category"];
+  const categoryName =
+    typeof category === "object" && category !== null
+      ? ((category as Record<string, unknown>)["name"] ??
+        (category as Record<string, unknown>)["Name"])
+      : category;
+  return {
+    name: item["name"] ?? item["Name"],
+    version: item["version"] ?? item["Version"],
+    category: categoryName,
+    displayname: item["displayname"] ?? item["displayName"] ?? item["DisplayName"],
+    registrant: item["registrant"] ?? item["Registrant"],
+  };
+}
 
-  const payload = await mesheryctlJson(mArgs);
-  const items = asArray(payload, ["models", "data", "results"]);
+async function listModels(args: string[]): Promise<string> {
+  const q = listQueryFromFlags({
+    page: getFlag(args, "--page"),
+    pagesize: getFlag(args, "--pagesize") ?? getFlag(args, "--limit"),
+  });
+  const payload = await serverGetJson<Record<string, unknown>>({
+    path: API.models,
+    query: { page: q.page, pagesize: q.pagesize },
+  });
+  const raw = Array.isArray(payload["models"])
+    ? (payload["models"] as Record<string, unknown>[])
+    : [];
+  const items = raw.map(normalizeModel);
   const isEmpty = items.length === 0;
   return renderOutput([
     isEmpty ? emptyState("models") : renderList("models", items, listSchema),
@@ -81,14 +102,11 @@ async function viewModel(args: string[]): Promise<string> {
     "json",
   ]);
   return renderOutput([
-    renderDetail("model", asObject(payload), viewSchema),
+    renderDetail("model", normalizeModel(asObject(payload)), viewSchema),
     renderHelp(getSuggestions({ domain: "model", action: "view" })),
   ]);
 }
 
-/**
- * Schema-faithful content retrieve - YAML/JSON only, NEVER TOON-as-content.
- */
 async function contentModel(args: string[]): Promise<string> {
   const name = getPositional(args, 0);
   if (!name) {
