@@ -1,6 +1,8 @@
 import { getFlag, getPositional, rejectUnknownFlags } from "../args.js";
 import { AxiError } from "../errors.js";
-import { asArray, asObject, mesheryctlJson } from "../mesheryctl.js";
+import { asObject, mesheryctlJson } from "../mesheryctl.js";
+import { API } from "../paths.js";
+import { listQueryFromFlags, serverGetJson } from "../server.js";
 import { getSuggestions } from "../suggestions.js";
 import {
   emptyState,
@@ -42,15 +44,41 @@ const viewSchema: FieldDef[] = [
   field("apiVersion", "api_version"),
 ];
 
-async function listComponents(args: string[]): Promise<string> {
-  const mArgs = ["component", "list", "--output-format", "json"];
-  const page = getFlag(args, "--page");
-  const pagesize = getFlag(args, "--pagesize") ?? getFlag(args, "--limit");
-  if (page) mArgs.push("--page", page);
-  if (pagesize) mArgs.push("--pagesize", pagesize);
+function normalizeComponent(item: Record<string, unknown>): Record<string, unknown> {
+  const model = item["model"];
+  const modelName =
+    typeof model === "object" && model !== null
+      ? ((model as Record<string, unknown>)["name"] ??
+        (model as Record<string, unknown>)["Name"])
+      : model;
+  const component = item["component"];
+  const version =
+    item["version"] ??
+    (typeof component === "object" && component !== null
+      ? (component as Record<string, unknown>)["version"]
+      : undefined);
+  return {
+    name: item["name"] ?? item["displayName"] ?? item["DisplayName"] ?? item["Name"],
+    kind: item["kind"] ?? item["Kind"],
+    model: modelName,
+    version,
+    apiVersion: item["apiVersion"] ?? item["api_version"],
+  };
+}
 
-  const payload = await mesheryctlJson(mArgs);
-  const items = asArray(payload, ["components", "data", "results"]);
+async function listComponents(args: string[]): Promise<string> {
+  const q = listQueryFromFlags({
+    page: getFlag(args, "--page"),
+    pagesize: getFlag(args, "--pagesize") ?? getFlag(args, "--limit"),
+  });
+  const payload = await serverGetJson<Record<string, unknown>>({
+    path: API.components,
+    query: { page: q.page, pagesize: q.pagesize },
+  });
+  const raw = Array.isArray(payload["components"])
+    ? (payload["components"] as Record<string, unknown>[])
+    : [];
+  const items = raw.map(normalizeComponent);
   const isEmpty = items.length === 0;
   return renderOutput([
     isEmpty
@@ -78,7 +106,11 @@ async function viewComponent(args: string[]): Promise<string> {
     "json",
   ]);
   return renderOutput([
-    renderDetail("component", asObject(payload), viewSchema),
+    renderDetail(
+      "component",
+      normalizeComponent(asObject(payload)),
+      viewSchema,
+    ),
     renderHelp(getSuggestions({ domain: "component", action: "view" })),
   ]);
 }
