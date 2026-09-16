@@ -135,3 +135,4 @@ Report the published version, the release URL, and the npm verification output.
 - **Never hand-author the tag or notes.** If you are computing a version number, something is wrong.
 - **Restricted sessions.** Publishing is outward-facing and irreversible. If your session is not
   permitted to publish releases, hand step 4 to a maintainer with release rights.
+- **Do not reintroduce `NPM_TOKEN` as the steady-state path.** OIDC Trusted Publisher is primary after bootstrap.

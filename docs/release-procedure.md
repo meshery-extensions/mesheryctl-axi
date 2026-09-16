@@ -8,8 +8,10 @@ split from [`meshery/schemas`](https://github.com/meshery/schemas).
 **Agents: use the [`mesheryctl-axi-release`](../.agents/skills/mesheryctl-axi-release/SKILL.md)
 skill** to cut a release. It walks the whole procedure with its safeguards.
 
-**Do not create releases by hand.** No `gh release create`, no local `npm publish`,
-no `npm version`, no hand-written release notes, no hand-made tags.
+**Do not create releases by hand.** No `gh release create`, no `npm version`, no
+hand-written release notes, no hand-made tags. Steady-state `npm publish` belongs
+to `release.yml` (OIDC). The only exception is the documented one-time bootstrap
+when the package does not yet exist on npm.
 
 ## The release chain
 
@@ -55,21 +57,28 @@ On npmjs.com → `mesheryctl-axi` → Settings → Trusted Publisher → GitHub 
 ### One-time bootstrap (chicken/egg)
 
 Trusted Publisher can only be attached to a package that **already exists** on the
-registry. Until `npm view mesheryctl-axi` succeeds, a maintainer must do a **one-time**
-bootstrap (short-lived granular/automation token, or a manual `npm publish` from a
-trusted machine), then configure Trusted Publisher and **remove** any temporary token /
-`NPM_TOKEN` secret. Do **not** leave a long-lived token as the steady-state path —
-OIDC is primary forever after bootstrap.
+registry. npm still cannot create a brand-new package via OIDC alone
+([npm/cli#8544](https://github.com/npm/cli/issues/8544)). Until
+`npm view mesheryctl-axi` succeeds, a maintainer must do a **one-time** bootstrap,
+then configure Trusted Publisher and **remove** any temporary credentials. Do **not**
+leave a long-lived `NPM_TOKEN` as the steady-state path — OIDC is primary forever
+after bootstrap.
 
-Suggested bootstrap order:
+Bootstrap options (pick one; Meshery/Layer5 npm org account preferred):
 
-1. Decide which npm account owns the unscoped `mesheryctl-axi` package (Meshery/Layer5
-   org preferred over a personal account).
-2. Create a short-lived token that can publish a **new** package for that account (or
-   publish the first version manually).
-3. Publish the first version (via temporary secret + workflow, or manual), then
-   immediately configure Trusted Publisher with the table above.
-4. Delete the temporary token / `NPM_TOKEN` repository secret if it was set.
+1. **Preferred:** publish a one-shot stub / placeholder (for example `0.0.0` or npm's
+   `setup-trusted-publishing` flow) under the Meshery/Layer5 npm account, attach
+   Trusted Publisher with the table above, then delete any temporary token.
+2. **Alternate:** a short-lived granular or Automation token for the **first** create
+   only (temporary `NPM_TOKEN` secret or manual `npm publish` from a trusted machine),
+   then configure Trusted Publisher and immediately delete the token / secret.
+
+Suggested order:
+
+1. Decide which npm account owns the unscoped `mesheryctl-axi` package.
+2. Run the chosen bootstrap so the package exists on the registry.
+3. Configure Trusted Publisher (table above).
+4. Delete any temporary token / `NPM_TOKEN` repository secret.
 5. Add maintainers: `npm owner add <npm-user> mesheryctl-axi`.
 
 ### Other one-time repo settings
@@ -113,7 +122,8 @@ npx -y mesheryctl-axi@<version> --version       # the published bin runs
 
 ## What NOT to do
 
-- ❌ Do NOT `npm publish` or `npm version` locally; `release.yml` owns publishing (with provenance).
+- ❌ Do NOT `npm publish` or `npm version` locally as the steady-state path; `release.yml` owns publishing (OIDC + provenance). The one-time bootstrap above is the only exception.
+- ❌ Do NOT leave a long-lived `NPM_TOKEN` as the steady-state publish credential after bootstrap.
 - ❌ Do NOT create tags or releases by hand, or edit the draft's version or notes; fix PR labels instead.
 - ❌ Do NOT publish a draft before the Release Drafter run for the current `master` head has finished.
 - ❌ Do NOT republish an existing npm version; npm versions are permanent. Cut a new patch instead.

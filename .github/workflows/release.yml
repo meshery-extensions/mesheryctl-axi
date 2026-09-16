@@ -125,7 +125,7 @@ jobs:
         run: |
           set -euo pipefail
           for attempt in $(seq 1 20); do
-            if [ "$(npm view "mesheryctl-axi@${VERSION}" version 2>/dev/null)" = "$VERSION" ]; then
+            if [ "$(npm view \"mesheryctl-axi@${VERSION}\" version 2>/dev/null)" = "$VERSION" ]; then
               echo "mesheryctl-axi@${VERSION} is live on npm" >> "$GITHUB_STEP_SUMMARY"
               exit 0
             fi
