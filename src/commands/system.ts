@@ -4,13 +4,7 @@ import { AxiError } from '../errors.js';
 import { API } from '../paths.js';
 import { serverGetJson } from '../server.js';
 import { getSuggestions } from '../suggestions.js';
-import {
-  field,
-  renderDetail,
-  renderHelp,
-  renderOutput,
-  type FieldDef,
-} from '../toon.js';
+import { field, renderDetail, renderHelp, renderOutput, type FieldDef } from '../toon.js';
 
 export const SYSTEM_FLAGS: Record<string, readonly string[]> = {
   status: [],
@@ -46,7 +40,8 @@ async function systemStatus(): Promise<string> {
   // from config + /api/system/version (never scrape tables).
   const auth = await tryLoadMesheryAuth();
   let version: string | undefined;
-  let status = 'unreachable';
+
+  let status: string;
 
   try {
     const ver = await serverGetJson<Record<string, unknown>>({
@@ -78,10 +73,7 @@ async function systemStatus(): Promise<string> {
     statusSchema,
   );
 
-  return renderOutput([
-    detail,
-    renderHelp(getSuggestions({ domain: 'system', action: 'status' })),
-  ]);
+  return renderOutput([detail, renderHelp(getSuggestions({ domain: 'system', action: 'status' }))]);
 }
 
 async function systemContext(): Promise<string> {
