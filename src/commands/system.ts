@@ -109,7 +109,7 @@ async function systemStatus(): Promise<string> {
   // from config + /api/system/version (never scrape tables).
   const auth = await tryLoadMesheryAuth();
   let version: string | undefined;
-  let status = "unreachable";
+  let status: string;
   try {
     const ver = await serverGetJson<Record<string, unknown>>({
       path: API.version,
