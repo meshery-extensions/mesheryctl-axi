@@ -18,7 +18,7 @@ include build/Makefile.show-help.mk
 
 .PHONY: setup build tests dev
 
-## Install mesheryctl-axi dependencies (clean install from package-lock.json)
+## Install mesheryctl-axi dependencies via npm ci
 setup:
 	npm ci
 

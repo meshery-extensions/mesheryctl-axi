@@ -8,8 +8,10 @@ split from [`meshery/schemas`](https://github.com/meshery/schemas).
 **Agents: use the [`mesheryctl-axi-release`](../.agents/skills/mesheryctl-axi-release/SKILL.md)
 skill** to cut a release. It walks the whole procedure with its safeguards.
 
-**Do not create releases by hand.** No `gh release create`, no local `npm publish`,
-no `npm version`, no hand-written release notes, no hand-made tags.
+**Do not create releases by hand.** No `gh release create`, no `npm version`, no
+hand-written release notes, no hand-made tags. Steady-state `npm publish` belongs
+to `release.yml` (OIDC). The only exception is the documented one-time bootstrap
+when the package does not yet exist on npm.
 
 ## The release chain
 
@@ -20,10 +22,9 @@ no `npm version`, no hand-written release notes, no hand-made tags.
    The tag, for example `v0.1.0`, becomes the version source of truth.
 3. **Publishing fires `release: published`** and
    [`release.yml`](../.github/workflows/release.yml) ("Publish Node.js Package"):
-   - fails fast with a clear error if the `NPM_TOKEN` secret is missing,
    - stamps the tag's version into `package.json` (`npm version --no-git-tag-version`),
    - `npm ci`, `npm run build` (`tsc`), `npm test`,
-   - `npm publish --provenance --access public`,
+   - `npm publish --provenance --access public` via **npm Trusted Publisher (OIDC)** (no long-lived `NPM_TOKEN`),
    - polls the npm registry until `mesheryctl-axi@<version>` is visible,
    - opens (and tries to auto-merge) a `release/version-bump/v<version>` PR so
      `master`'s `package.json` / `package-lock.json` track the published version.
@@ -32,38 +33,62 @@ no `npm version`, no hand-written release notes, no hand-made tags.
 bin, and dry-runs `npm pack` on every PR and every push to `master`, so a release only
 ships code that already passed CI.
 
-## One-time setup (maintainer with admin rights)
+## Publishing auth (OIDC primary)
 
-These steps need a human with npm and repository admin access. Until the first one is
-done, publishing a release fails at the `Require NPM_TOKEN` step by design. Tracked in
+Steady-state publishing matches [`layer5io/sistent`](https://github.com/layer5io/sistent)
+and [`meshery/schemas`](https://github.com/meshery/schemas): **npm Trusted Publisher
+(OIDC)**. `release.yml` keeps `permissions.id-token: write`, publishes with
+`npm publish --provenance --access public`, and leaves `NODE_AUTH_TOKEN` empty so npm
+uses the GitHub OIDC token — not a long-lived `NPM_TOKEN`. Tracked in
 [#4](https://github.com/meshery-extensions/mesheryctl-axi/issues/4).
 
-1. **`NPM_TOKEN` repository secret (required).** Create an npm token that can publish
-   the unscoped package `mesheryctl-axi`, owned by the npm account that should own the
-   package (the Meshery/Layer5 npm org account is preferred over a personal one):
-   - an npm **granular access token** with *Read and write* permission (for the very
-     first publish the package does not exist yet, so the token must be allowed to
-     publish new packages for that account), or a classic **Automation** token.
-   - Store it: `gh secret set NPM_TOKEN -R meshery-extensions/mesheryctl-axi`
-     (or Settings → Secrets and variables → Actions → New repository secret).
-2. **`GH_ACCESS_TOKEN` (optional).** Only needed once `master` is branch-protected:
+### Trusted Publisher settings (after the package exists)
+
+On npmjs.com → `mesheryctl-axi` → Settings → Trusted Publisher → GitHub Actions:
+
+| Field | Value |
+| --- | --- |
+| Organization / user | `meshery-extensions` |
+| Repository | `mesheryctl-axi` |
+| Workflow filename | `release.yml` (filename only) |
+| Environment | leave empty unless the workflow adds one |
+| Allow npm publish | enabled |
+
+### One-time bootstrap (chicken/egg)
+
+Trusted Publisher can only be attached to a package that **already exists** on the
+registry. npm still cannot create a brand-new package via OIDC alone
+([npm/cli#8544](https://github.com/npm/cli/issues/8544)). Until
+`npm view mesheryctl-axi` succeeds, a maintainer must do a **one-time** bootstrap,
+then configure Trusted Publisher and **remove** any temporary credentials. Do **not**
+leave a long-lived `NPM_TOKEN` as the steady-state path — OIDC is primary forever
+after bootstrap.
+
+Bootstrap options (pick one; Meshery/Layer5 npm org account preferred):
+
+1. **Preferred:** publish a one-shot stub / placeholder (for example `0.0.0` or npm's
+   `setup-trusted-publishing` flow) under the Meshery/Layer5 npm account, attach
+   Trusted Publisher with the table above, then delete any temporary token.
+2. **Alternate:** a short-lived granular or Automation token for the **first** create
+   only (temporary `NPM_TOKEN` secret or manual `npm publish` from a trusted machine),
+   then configure Trusted Publisher and immediately delete the token / secret.
+
+Suggested order:
+
+1. Decide which npm account owns the unscoped `mesheryctl-axi` package.
+2. Run the chosen bootstrap so the package exists on the registry.
+3. Configure Trusted Publisher (table above).
+4. Delete any temporary token / `NPM_TOKEN` repository secret.
+5. Add maintainers: `npm owner add <npm-user> mesheryctl-axi`.
+
+### Other one-time repo settings
+
+1. **`GH_ACCESS_TOKEN` (optional).** Only needed once `master` is branch-protected:
    the version-bump-back PR is merged with `gh pr merge --admin`, which the default
    `GITHUB_TOKEN` cannot do under protection. Without it the bump PR is simply left
    open for a maintainer to merge.
-3. **Actions may create pull requests.** Settings → Actions → General → "Allow GitHub
+2. **Actions may create pull requests.** Settings → Actions → General → "Allow GitHub
    Actions to create and approve pull requests" must stay enabled for the bump-back PR.
-
-### After the first successful publish
-
-1. Add the Meshery maintainers as npm owners of `mesheryctl-axi` so publishing does not
-   depend on a single account: `npm owner add <npm-user> mesheryctl-axi`.
-2. Configure **npm trusted publishing (OIDC)**, which is how `meshery/schemas` and
-   `layer5io/sistent` publish today: npmjs.com → `mesheryctl-axi` → Settings →
-   Trusted Publisher → GitHub Actions, organization `meshery-extensions`, repository
-   `mesheryctl-axi`, workflow `release.yml`. npm >= 11.5 prefers OIDC when a trusted
-   publisher is configured and falls back to `NODE_AUTH_TOKEN`, so `release.yml` keeps
-   working unchanged. Once OIDC is verified, the `NPM_TOKEN` secret and the
-   `Require NPM_TOKEN` gate can be removed.
 
 ## Versioning
 
@@ -97,7 +122,8 @@ npx -y mesheryctl-axi@<version> --version       # the published bin runs
 
 ## What NOT to do
 
-- ❌ Do NOT `npm publish` or `npm version` locally; `release.yml` owns publishing (with provenance).
+- ❌ Do NOT `npm publish` or `npm version` locally as the steady-state path; `release.yml` owns publishing (OIDC + provenance). The one-time bootstrap above is the only exception.
+- ❌ Do NOT leave a long-lived `NPM_TOKEN` as the steady-state publish credential after bootstrap.
 - ❌ Do NOT create tags or releases by hand, or edit the draft's version or notes; fix PR labels instead.
 - ❌ Do NOT publish a draft before the Release Drafter run for the current `master` head has finished.
 - ❌ Do NOT republish an existing npm version; npm versions are permanent. Cut a new patch instead.

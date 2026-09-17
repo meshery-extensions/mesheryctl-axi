@@ -39,7 +39,8 @@
   },
   "dependencies": {
     "@toon-format/toon": "^4.1.1",
-    "axi-sdk-js": "^0.1.11"
+    "axi-sdk-js": "^0.1.11",
+    "yaml": "^2.9.1"
   },
   "devDependencies": {
     "@types/node": "^26.5.0",

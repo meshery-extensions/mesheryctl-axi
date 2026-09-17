@@ -1,6 +1,8 @@
 import { getFlag, getPositional, rejectUnknownFlags } from "../args.js";
 import { AxiError } from "../errors.js";
-import { asArray, asObject, mesheryctlExec, mesheryctlJson } from "../mesheryctl.js";
+import { asObject, mesheryctlExec, mesheryctlJson } from "../mesheryctl.js";
+import { API } from "../paths.js";
+import { listQueryFromFlags, serverGetJson } from "../server.js";
 import { getSuggestions } from "../suggestions.js";
 import {
   emptyState,
@@ -26,7 +28,7 @@ flags{list}:
 flags{content}:
   --format yaml|json (default yaml)
 notes:
-  content returns schema-faithful YAML/JSON - never TOON
+  content returns schema-faithful YAML/JSON — never TOON
 examples:
   mesheryctl-axi design list
   mesheryctl-axi design view <name>
@@ -50,15 +52,34 @@ const viewSchema: FieldDef[] = [
   field("updated_at", "updated"),
 ];
 
-async function listDesigns(args: string[]): Promise<string> {
-  const mArgs = ["design", "list", "--output-format", "json"];
-  const page = getFlag(args, "--page");
-  const pagesize = getFlag(args, "--pagesize") ?? getFlag(args, "--limit");
-  if (page) mArgs.push("--page", page);
-  if (pagesize) mArgs.push("--pagesize", pagesize);
+function normalizeDesign(item: Record<string, unknown>): Record<string, unknown> {
+  const user = item["user_id"] ?? item["userID"] ?? item["UserID"];
+  return {
+    id: item["id"] ?? item["ID"],
+    name: item["name"] ?? item["Name"],
+    user_id: typeof user === "object" && user ? String(user) : user,
+    visibility: item["visibility"] ?? item["Visibility"],
+    created_at: item["created_at"] ?? item["createdAt"] ?? item["CreatedAt"],
+    updated_at: item["updated_at"] ?? item["updatedAt"] ?? item["UpdatedAt"],
+  };
+}
 
-  const payload = await mesheryctlJson(mArgs);
-  const items = asArray(payload, ["designs", "patterns", "data", "results"]);
+async function listDesigns(args: string[]): Promise<string> {
+  // Interim Server API — mesheryctl design list has no --output-format.
+  const q = listQueryFromFlags({
+    page: getFlag(args, "--page"),
+    pagesize: getFlag(args, "--pagesize") ?? getFlag(args, "--limit"),
+  });
+  const payload = await serverGetJson<Record<string, unknown>>({
+    path: API.designs,
+    query: { page: q.page, pagesize: q.pagesize },
+  });
+  const raw = Array.isArray(payload["patterns"])
+    ? (payload["patterns"] as Record<string, unknown>[])
+    : Array.isArray(payload["designs"])
+      ? (payload["designs"] as Record<string, unknown>[])
+      : [];
+  const items = raw.map(normalizeDesign);
   const isEmpty = items.length === 0;
   return renderOutput([
     isEmpty ? emptyState("designs") : renderList("designs", items, listSchema),
@@ -82,14 +103,11 @@ async function viewDesign(args: string[]): Promise<string> {
     "json",
   ]);
   return renderOutput([
-    renderDetail("design", asObject(payload), viewSchema),
+    renderDetail("design", normalizeDesign(asObject(payload)), viewSchema),
     renderHelp(getSuggestions({ domain: "design", action: "view" })),
   ]);
 }
 
-/**
- * Schema-faithful content retrieve - YAML/JSON only, NEVER TOON-as-content.
- */
 async function contentDesign(args: string[]): Promise<string> {
   const name = getPositional(args, 0);
   if (!name) {
@@ -105,7 +123,6 @@ async function contentDesign(args: string[]): Promise<string> {
       "VALIDATION_ERROR",
     );
   }
-  // Pass through mesheryctl's output-format so content stays schema-faithful.
   const raw = await mesheryctlExec([
     "design",
     "view",
@@ -113,7 +130,6 @@ async function contentDesign(args: string[]): Promise<string> {
     "--output-format",
     format,
   ]);
-  // Return content verbatim - do not wrap in TOON.
   return raw.endsWith("\n") ? raw : `${raw}\n`;
 }
 

@@ -1,7 +1,8 @@
-import { encode } from "@toon-format/toon";
 import { rejectUnknownFlags } from "../args.js";
+import { loadMesheryAuth, tryLoadMesheryAuth } from "../config.js";
 import { AxiError } from "../errors.js";
-import { asObject, mesheryctlExec, mesheryctlJson } from "../mesheryctl.js";
+import { API } from "../paths.js";
+import { serverGetJson } from "../server.js";
 import { getSuggestions } from "../suggestions.js";
 import {
   field,
@@ -29,6 +30,7 @@ const statusSchema: FieldDef[] = [
   field("version"),
   field("platform"),
   field("provider"),
+  field("endpoint"),
 ];
 
 const contextSchema: FieldDef[] = [
@@ -40,20 +42,38 @@ const contextSchema: FieldDef[] = [
 ];
 
 async function systemStatus(): Promise<string> {
-  let detail: string;
+  // mesheryctl system status has no --output-format; build structured status
+  // from config + /api/system/version (never scrape tables).
+  const auth = await tryLoadMesheryAuth();
+  let version: string | undefined;
+  let status = "unreachable";
   try {
-    const payload = await mesheryctlJson([
-      "system",
-      "status",
-      "--output-format",
-      "json",
-    ]);
-    detail = renderDetail("system_status", asObject(payload), statusSchema);
+    const ver = await serverGetJson<Record<string, unknown>>({
+      path: API.version,
+      anonymous: true,
+      ...(auth ? { auth } : {}),
+    });
+    version =
+      (ver["build"] as string | undefined) ??
+      (ver["version"] as string | undefined) ??
+      (ver["server_version"] as string | undefined) ??
+      JSON.stringify(ver).slice(0, 80);
+    status = "running";
   } catch {
-    // Fallback: some mesheryctl builds lack JSON for status.
-    const text = await mesheryctlExec(["system", "status"]);
-    detail = encode({ system_status: text.trim().slice(0, 500) || "ok" });
+    status = auth ? "unreachable" : "unavailable";
   }
+
+  const detail = renderDetail(
+    "system_status",
+    {
+      status,
+      version: version ?? null,
+      platform: auth?.context.platform ?? null,
+      provider: auth?.context.provider ?? null,
+      endpoint: auth?.context.endpoint ?? null,
+    },
+    statusSchema,
+  );
   return renderOutput([
     detail,
     renderHelp(getSuggestions({ domain: "system", action: "status" })),
@@ -61,20 +81,19 @@ async function systemStatus(): Promise<string> {
 }
 
 async function systemContext(): Promise<string> {
-  let detail: string;
-  try {
-    const payload = await mesheryctlJson([
-      "system",
-      "context",
-      "view",
-      "--output-format",
-      "json",
-    ]);
-    detail = renderDetail("system_context", asObject(payload), contextSchema);
-  } catch {
-    const text = await mesheryctlExec(["system", "context", "view"]);
-    detail = encode({ system_context: text.trim().slice(0, 500) || "none" });
-  }
+  // Read structured context from mesheryctl config — no table scrape.
+  const auth = await loadMesheryAuth();
+  const detail = renderDetail(
+    "system_context",
+    {
+      name: auth.context.name,
+      endpoint: auth.context.endpoint,
+      token: auth.context.tokenName,
+      platform: auth.context.platform ?? null,
+      channel: auth.context.channel ?? null,
+    },
+    contextSchema,
+  );
   return renderOutput([
     detail,
     renderHelp(getSuggestions({ domain: "system", action: "context" })),

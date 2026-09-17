@@ -10,12 +10,12 @@ name: Publish Node.js Package
 # provenance, verifies the version is live on the registry, and opens (and
 # auto-merges) a PR that bumps package.json on master to the published version.
 #
-# Authentication: gated on the NPM_TOKEN repository secret (required for the
-# first publish - npm trusted publishing (OIDC) can only be configured once the
-# package exists on the registry). npm >= 11.5 prefers OIDC trusted publishing
-# when it is configured for the package and falls back to NODE_AUTH_TOKEN, so
-# this workflow keeps working unchanged after the migration described in
-# docs/release-procedure.md.
+# Authentication: npm Trusted Publisher (OIDC) is the steady-state path
+# (same pattern as layer5io/sistent). permissions.id-token: write is required.
+# NODE_AUTH_TOKEN is intentionally empty / omitted so publish uses OIDC, not a
+# long-lived NPM_TOKEN. See docs/release-procedure.md for the one-time bootstrap
+# when the package does not yet exist on the registry (Trusted Publisher can
+# only be attached after the first package version exists).
 
 on:
   release:
@@ -44,15 +44,6 @@ jobs:
       pull-requests: write  # Required to open the version-bump-back PR
       issues: write  # peter-evans/create-pull-request needs this to apply labels when falling back to GITHUB_TOKEN
     steps:
-      - name: "Require NPM_TOKEN"
-        env:
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: |
-          if [ -z "$NPM_TOKEN" ]; then
-            echo "::error title=NPM_TOKEN missing::The NPM_TOKEN repository secret is not set, so mesheryctl-axi cannot be published. A maintainer must add an npm automation (or granular publish) token as the NPM_TOKEN secret - see docs/release-procedure.md."
-            exit 1
-          fi
-
       - name: "Resolve target branch"
         id: target_branch
         env:
@@ -120,9 +111,11 @@ jobs:
           NODE_AUTH_TOKEN: ''  # Explicitly empty for install
 
       - name: Publish Package
+        # OIDC Trusted Publisher (no long-lived NPM_TOKEN). Match sistent:
+        # leave NODE_AUTH_TOKEN empty so npm uses the GitHub OIDC token.
         run: npm publish --provenance --access public --verbose
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NODE_AUTH_TOKEN: ''
 
       # A published GitHub release does not prove the package reached npm.
       # Poll the registry until the exact version is visible.

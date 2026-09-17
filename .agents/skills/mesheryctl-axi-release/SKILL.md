@@ -34,18 +34,19 @@ Do **not** create a tag, bump `package.json`, write release notes, or `npm publi
 
 Set `R=meshery-extensions/mesheryctl-axi` for the commands below.
 
-### 0. Preflight: publishing credentials exist
+### 0. Preflight: npm Trusted Publisher (OIDC) is ready
 
-`release.yml` refuses to publish without the `NPM_TOKEN` repository secret (until npm
-trusted publishing is configured, see the reference doc). Listing secrets needs admin:
+Steady-state auth is **OIDC Trusted Publisher** (see `docs/release-procedure.md`), not a
+long-lived `NPM_TOKEN`. Before publishing a draft:
 
-```bash
-gh secret list -R "$R"          # expect NPM_TOKEN
-```
+1. Confirm the package exists on npm (`npm view mesheryctl-axi version`), **or** this is
+   the documented one-time bootstrap and a maintainer is handling the short-lived token.
+2. Confirm Trusted Publisher is configured: org `meshery-extensions`, repo
+   `mesheryctl-axi`, workflow filename `release.yml`, environment empty, allow publish.
+3. Do **not** expect `NPM_TOKEN` in `gh secret list` for steady-state releases.
 
-If `NPM_TOKEN` is absent (and trusted publishing is not configured), **stop** and ask a
-maintainer to provision it. Publishing the draft anyway burns the tag on a failed publish.
-If you cannot list secrets, say so and ask rather than guessing.
+If Trusted Publisher is missing and this is not a deliberate bootstrap, **stop** and ask
+a maintainer — publishing the draft anyway burns the tag on a failed publish.
 
 ### 1. Confirm master is green
 
@@ -109,9 +110,9 @@ gh run list -R "$R" --workflow release.yml --limit 1 --json databaseId,status,co
 gh run watch <databaseId> -R "$R" --exit-status
 ```
 
-If it fails at `Require NPM_TOKEN`, the secret is missing (step 0). If it fails at
-`Publish Package`, read the npm error (auth, 2FA policy, name ownership) and escalate -
-do not retry by publishing locally.
+If it fails at `Publish Package`, read the npm error (OIDC / Trusted Publisher
+misconfiguration, provenance, name ownership) and escalate - do not retry by publishing
+locally, and do not reintroduce a long-lived `NPM_TOKEN` as the steady-state fix.
 
 ### 6. Verify at the registry, not the release page
 
@@ -134,3 +135,4 @@ Report the published version, the release URL, and the npm verification output.
 - **Never hand-author the tag or notes.** If you are computing a version number, something is wrong.
 - **Restricted sessions.** Publishing is outward-facing and irreversible. If your session is not
   permitted to publish releases, hand step 4 to a maintainer with release rights.
+- **Do not reintroduce `NPM_TOKEN` as the steady-state path.** OIDC Trusted Publisher is primary after bootstrap.
