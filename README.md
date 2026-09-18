@@ -49,7 +49,7 @@ Use this sequence when setting up an agent or preparing a machine for an agent t
 
 Before starting, confirm that:
 
-- Node.js 22 or newer is installed.
+- Node.js 22.13 or newer is installed (22.13+, or 24+).
 - `mesheryctl` is installed.
 - A Meshery Server is reachable.
 - The active `mesheryctl` context is authenticated.
