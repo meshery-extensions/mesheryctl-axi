@@ -113,9 +113,19 @@ jobs:
       - name: Publish Package
         # OIDC Trusted Publisher (no long-lived NPM_TOKEN). Match sistent:
         # leave NODE_AUTH_TOKEN empty so npm uses the GitHub OIDC token.
-        run: npm publish --provenance --access public --verbose
+        # Idempotent: npm versions are immutable, so when the exact version is
+        # already live (a re-run, or a record-backfill of a hand-published
+        # release), publish would be rejected — skip instead of going red.
         env:
           NODE_AUTH_TOKEN: ''
+          VERSION: ${{ steps.resolved_version.outputs.version }}
+        run: |
+          set -euo pipefail
+          if [ "$(npm view "mesheryctl-axi@${VERSION}" version 2>/dev/null)" = "$VERSION" ]; then
+            echo "mesheryctl-axi@${VERSION} is already live on npm; skipping publish."
+            exit 0
+          fi
+          npm publish --provenance --access public --verbose
 
       # A published GitHub release does not prove the package reached npm.
       # Poll the registry until the exact version is visible.
