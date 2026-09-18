@@ -22,17 +22,22 @@ include build/Makefile.show-help.mk
 setup:
 	npm ci
 
+## Build mesheryctl-axi with tsc into dist/
 build:
 	npm run build
 
+## Run the vitest suite
 tests:
 	npm run test
 
+## Lint TypeScript sources with ESLint
 lint:
 	npm run lint
 
+## Check Prettier formatting
 format-check:
 	npm run format:check
 
+## Run the CLI from source, e.g. make dev ARGS="connection list"
 dev:
 	npm run dev -- $(ARGS)

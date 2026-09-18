@@ -36,7 +36,7 @@ npx -y mesheryctl-axi
 
 ### Prerequisites
 
-- **Node.js >= 22**
+- **Node.js 22.13+ or 24+**
 - **`mesheryctl` installed and authenticated.** This package spawns `mesheryctl`; it does not embed Meshery.
   - Install: https://docs.meshery.io/installation
   - Override the binary: `MESHERYCTL_BIN=/path/to/mesheryctl`
