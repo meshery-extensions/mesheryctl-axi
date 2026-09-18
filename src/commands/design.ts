@@ -165,9 +165,7 @@ async function contentDesign(args: string[]): Promise<string> {
   }
 
   // Pass through mesheryctl's output-format so content stays schema-faithful.
-  const raw = await mesheryctlExec(
-    designViewArgv(name, format),
-  );
+  const raw = await mesheryctlExec(designViewArgv(name, format));
 
   // Return content verbatim - do not wrap in TOON.
   return raw.endsWith('\n') ? raw : `${raw}\n`;

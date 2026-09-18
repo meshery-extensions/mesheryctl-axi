@@ -77,8 +77,8 @@ const viewSchema: FieldDef[] = [
  * argv the wrapper sends to `mesheryctl connection view`.
  * Exported so the mesheryctl contract suite can check it against a real binary.
  */
-export function connectionViewArgv(id: string, format: string): string[] {
-  return ['connection', 'view', id, '--output-format', format];
+export function connectionViewArgv(name: string, format: string): string[] {
+  return ['connection', 'view', name, '--output-format', format];
 }
 
 function normalizeConnection(

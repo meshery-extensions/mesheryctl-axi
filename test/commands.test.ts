@@ -1,15 +1,15 @@
 import { afterEach, describe, expect, it } from 'vitest';
 
-import { setMesheryctlRunner, type ExecResult } from '../src/mesheryctl.js';
-import { setServerAuth, setServerFetcher } from '../src/server.js';
+import { componentCommand } from '../src/commands/component.js';
 import { connectionCommand } from '../src/commands/connection.js';
 import { designCommand } from '../src/commands/design.js';
 import { modelCommand } from '../src/commands/model.js';
-import { componentCommand } from '../src/commands/component.js';
 import { systemCommand } from '../src/commands/system.js';
-import { AxiError, mapMesheryctlError } from '../src/errors.js';
-import { API } from '../src/paths.js';
 import type { ResolvedMesheryAuth } from '../src/config.js';
+import { AxiError, mapMesheryctlError } from '../src/errors.js';
+import { setMesheryctlRunner, type ExecResult } from '../src/mesheryctl.js';
+import { API } from '../src/paths.js';
+import { setServerAuth, setServerFetcher } from '../src/server.js';
 
 function ok(stdout: string): ExecResult {
   return { stdout, stderr: '', exitCode: 0 };
@@ -86,6 +86,7 @@ describe('connection list via Server API', () => {
 
   it('uses source status aggregates and supports current camelCase metadata', async () => {
     setServerAuth(fakeAuth);
+
     setServerFetcher(async () =>
       jsonResponse({
         connections: [
@@ -107,6 +108,7 @@ describe('connection list via Server API', () => {
 
   it('falls back to row statuses when a source summary mixes valid and invalid entries', async () => {
     setServerAuth(fakeAuth);
+
     setServerFetcher(async () =>
       jsonResponse({
         connections: [
@@ -124,6 +126,7 @@ describe('connection list via Server API', () => {
 
   it('falls back to row statuses when a source summary has non-numeric counts', async () => {
     setServerAuth(fakeAuth);
+
     setServerFetcher(async () =>
       jsonResponse({
         connections: [
@@ -141,6 +144,7 @@ describe('connection list via Server API', () => {
 
   it('falls back to row statuses when a source summary has fractional counts', async () => {
     setServerAuth(fakeAuth);
+
     setServerFetcher(async () =>
       jsonResponse({
         connections: [{ id: 'c1', status: 'CONNECTED' }],
@@ -155,6 +159,7 @@ describe('connection list via Server API', () => {
 
   it('falls back to row statuses when a source summary is empty', async () => {
     setServerAuth(fakeAuth);
+
     setServerFetcher(async () =>
       jsonResponse({
         connections: [
@@ -172,6 +177,7 @@ describe('connection list via Server API', () => {
 
   it('limits columns with --fields and expands the known schema with --full', async () => {
     setServerAuth(fakeAuth);
+
     setServerFetcher(async () =>
       jsonResponse({
         connections: [
@@ -297,7 +303,6 @@ describe('connection list via Server API', () => {
         '--output-format',
         'json',
       ]);
-
       expect(args).not.toContain('exp');
 
       return ok(

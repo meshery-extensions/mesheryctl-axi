@@ -136,6 +136,7 @@ A successful empty collection is definitive, for example `connections: 0`.
 Authentication, reachability, and server errors remain structured errors and
 must not be interpreted as empty results.
 
+<<<<<<< HEAD
 | Output | Contract |
 | --- | --- |
 | List, view, system, and error reporting | [TOON](https://toonformat.dev/) for concise agent use |
@@ -145,6 +146,15 @@ must not be interpreted as empty results.
 | Field control | `--fields <field,...>` selects known fields; `--full` uses the full known schema |
 | Successful reporting commands | End with contextual `help[]` suggestions |
 | Successful content commands | Return only raw YAML or JSON, without `help[]` |
+=======
+| Output                                  | Contract                                       |
+| --------------------------------------- | ---------------------------------------------- |
+| List, view, system, and error reporting | TOON for concise agent use                     |
+| `design content` and `model content`    | Raw YAML or JSON; never TOON-wrapped content   |
+| Empty collections                       | A definitive count such as `connections: 0`    |
+| Successful reporting commands           | End with contextual `help[]` suggestions       |
+| Successful content commands             | Return only raw YAML or JSON, without `help[]` |
+>>>>>>> 4dd69e9 (fix: make the lint/format tree self-consistent)
 
 #### Example session
 
