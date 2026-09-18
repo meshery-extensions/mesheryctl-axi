@@ -110,6 +110,11 @@ Semantic versioning, driven entirely by the labels on merged PRs
 - A mislabelled release is corrected by relabelling the merged PR and re-running
   Release Drafter (`gh workflow run release-drafter.yml -R meshery-extensions/mesheryctl-axi --ref master`).
   Relabelling alone does not re-draft.
+- The `release: published` workflow runs the workflow file **from the tag's tree**,
+  not from the default branch (verified 2026-09-18: backfilling the v0.2.0 release on
+  `e95c88b` executed that commit's `release.yml`). A backfill therefore cannot rely on
+  workflow fixes that landed later; the publish step is idempotent instead (it skips
+  a version already live on the registry).
 
 ## Verifying a release
 
