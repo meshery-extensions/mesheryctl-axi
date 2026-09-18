@@ -1,0 +1,44 @@
+name: mesheryctl contract
+
+# Checks every argv the wrapper sends to `mesheryctl` against the latest
+# released binary (issue #7). Runs on PRs and weekly so an upstream flag
+# change fails here instead of silently breaking the wrapper as in #5.
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  schedule:
+    - cron: "17 3 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v7
+
+      - name: Setup Node.js 24
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+
+      - name: Install Dependencies
+        run: make setup
+
+      - name: Build Project
+        run: make build
+
+      - name: Install latest mesheryctl
+        # Binary only; no Meshery Server is deployed. The contract suite
+        # probes `<subcommand> --help`, which needs no server.
+        run: |
+          set -euo pipefail
+          curl -L https://meshery.io/install | DEPLOY_MESHERY=false bash -
+          mesheryctl version
+
+      - name: Run contract suite
+        run: MESHERYCTL_CONTRACT=1 npm run test -- test/contract

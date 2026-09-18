@@ -218,6 +218,17 @@ make dev ARGS="connection list"   # run from source
 
 CI ([`node-checks.yml`](.github/workflows/node-checks.yml)) builds, tests, smoke-runs the built bin, and dry-runs `npm pack` on Node.js 22 and 24.
 
+The unit tests mock `mesheryctl`; the contract suite checks the real thing.
+Every argv the wrapper sends to the binary is centralized in argv builders
+(`*ViewArgv` in `src/commands/`) and enumerated in `src/contract.ts`, and
+[`mesheryctl-contract.yml`](.github/workflows/mesheryctl-contract.yml) installs
+the latest `mesheryctl` release and asserts each subcommand exists and accepts
+its flags — on every PR and weekly. Run it locally with a real binary:
+
+```bash
+MESHERYCTL_BIN=/path/to/mesheryctl MESHERYCTL_CONTRACT=1 npm run test -- test/contract
+```
+
 ### Releasing
 
 Releases are automation-driven: merged PRs update a Release Drafter draft, and publishing that draft publishes `mesheryctl-axi` to npm. Never `npm publish` by hand. See [`docs/release-procedure.md`](docs/release-procedure.md); agents use the [`mesheryctl-axi-release`](.agents/skills/mesheryctl-axi-release/SKILL.md) skill.

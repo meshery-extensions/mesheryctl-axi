@@ -50,6 +50,14 @@ const viewSchema: FieldDef[] = [
   field("registrant"),
 ];
 
+/**
+ * argv the wrapper sends to `mesheryctl model view`.
+ * Exported so the mesheryctl contract suite can check it against a real binary.
+ */
+export function modelViewArgv(name: string, format: string): string[] {
+  return ["model", "view", name, "--output-format", format];
+}
+
 function normalizeModel(item: Record<string, unknown>): Record<string, unknown> {
   const category = item["category"];
   const categoryName =
@@ -94,13 +102,7 @@ async function viewModel(args: string[]): Promise<string> {
       "VALIDATION_ERROR",
     );
   }
-  const payload = await mesheryctlJson([
-    "model",
-    "view",
-    name,
-    "--output-format",
-    "json",
-  ]);
+  const payload = await mesheryctlJson(modelViewArgv(name, "json"));
   return renderOutput([
     renderDetail("model", normalizeModel(asObject(payload)), viewSchema),
     renderHelp(getSuggestions({ domain: "model", action: "view" })),
@@ -122,13 +124,7 @@ async function contentModel(args: string[]): Promise<string> {
       "VALIDATION_ERROR",
     );
   }
-  const raw = await mesheryctlExec([
-    "model",
-    "view",
-    name,
-    "--output-format",
-    format,
-  ]);
+  const raw = await mesheryctlExec(modelViewArgv(name, format));
   return raw.endsWith("\n") ? raw : `${raw}\n`;
 }
 

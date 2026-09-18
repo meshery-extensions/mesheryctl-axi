@@ -52,6 +52,14 @@ const viewSchema: FieldDef[] = [
   field("updated_at", "updated"),
 ];
 
+/**
+ * argv the wrapper sends to `mesheryctl design view`.
+ * Exported so the mesheryctl contract suite can check it against a real binary.
+ */
+export function designViewArgv(name: string, format: string): string[] {
+  return ["design", "view", name, "--output-format", format];
+}
+
 function normalizeDesign(item: Record<string, unknown>): Record<string, unknown> {
   const user = item["user_id"] ?? item["userID"] ?? item["UserID"];
   return {
@@ -95,13 +103,7 @@ async function viewDesign(args: string[]): Promise<string> {
       "VALIDATION_ERROR",
     );
   }
-  const payload = await mesheryctlJson([
-    "design",
-    "view",
-    name,
-    "--output-format",
-    "json",
-  ]);
+  const payload = await mesheryctlJson(designViewArgv(name, "json"));
   return renderOutput([
     renderDetail("design", normalizeDesign(asObject(payload)), viewSchema),
     renderHelp(getSuggestions({ domain: "design", action: "view" })),
@@ -123,13 +125,7 @@ async function contentDesign(args: string[]): Promise<string> {
       "VALIDATION_ERROR",
     );
   }
-  const raw = await mesheryctlExec([
-    "design",
-    "view",
-    name,
-    "--output-format",
-    format,
-  ]);
+  const raw = await mesheryctlExec(designViewArgv(name, format));
   return raw.endsWith("\n") ? raw : `${raw}\n`;
 }
 
