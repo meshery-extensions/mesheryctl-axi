@@ -370,6 +370,28 @@ describe("list commands use Server API (no --output-format spawn)", () => {
     expect(out).toMatch(/help\[\d+\]:/);
   });
 
+  it("design list maps the server-canonical userId key", async () => {
+    setServerAuth(fakeAuth);
+    setServerFetcher(async () =>
+      jsonResponse({
+        patterns: [
+          {
+            id: "d1",
+            name: "sock-shop",
+            userId: "owner-1",
+            visibility: "private",
+            createdAt: "2026-09-10T14:22:01Z",
+            updatedAt: "2026-09-17T09:11:44Z",
+          },
+        ],
+        totalCount: 1,
+      }),
+    );
+    const out = await designCommand(["list"]);
+    expect(out).toContain("sock-shop,owner-1,");
+    expect(out).not.toContain(",null,");
+  });
+
   it("model list", async () => {
     setServerAuth(fakeAuth);
     setServerFetcher(async (url) => {

@@ -72,7 +72,9 @@ export function designViewArgv(name: string, format: string): string[] {
 function normalizeDesign(
   item: Record<string, unknown>,
 ): Record<string, unknown> {
-  const user = item["user_id"] ?? item["userID"] ?? item["UserID"];
+  // Server-canonical spelling is camelCase userId (MesheryPattern.UserID).
+  const user =
+    item["user_id"] ?? item["userId"] ?? item["userID"] ?? item["UserID"];
   return {
     id: item["id"] ?? item["ID"],
     name: item["name"] ?? item["Name"],
