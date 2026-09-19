@@ -46,13 +46,13 @@ uses the GitHub OIDC token — not a long-lived `NPM_TOKEN`. Tracked in
 
 On npmjs.com → `mesheryctl-axi` → Settings → Trusted Publisher → GitHub Actions:
 
-| Field | Value |
-| --- | --- |
-| Organization / user | `meshery-extensions` |
-| Repository | `mesheryctl-axi` |
-| Workflow filename | `release.yml` (filename only) |
-| Environment | leave empty unless the workflow adds one |
-| Allow npm publish | enabled |
+| Field               | Value                                    |
+| ------------------- | ---------------------------------------- |
+| Organization / user | `meshery-extensions`                     |
+| Repository          | `mesheryctl-axi`                         |
+| Workflow filename   | `release.yml` (filename only)            |
+| Environment         | leave empty unless the workflow adds one |
+| Allow npm publish   | enabled                                  |
 
 ### One-time bootstrap (chicken/egg)
 
@@ -95,10 +95,10 @@ Suggested order:
 Semantic versioning, driven entirely by the labels on merged PRs
 ([`.github/release-drafter.yml`](../.github/release-drafter.yml) owns the mapping):
 
-| PR label | Bump |
-| --- | --- |
-| `major` | MAJOR |
-| `minor` | MINOR |
+| PR label                    | Bump                |
+| --------------------------- | ------------------- |
+| `major`                     | MAJOR               |
+| `minor`                     | MINOR               |
 | `patch` or no version label | PATCH (the default) |
 
 - With no previous release, Release Drafter drafts **`v0.1.0`**, matching the initial
