@@ -5,12 +5,7 @@ import { AxiError } from '../src/errors.js';
 describe('unknown flags', () => {
   it('allows known flags', () => {
     expect(() =>
-      rejectUnknownFlags(
-        ['--page', '1'],
-        ['--page', '--limit'],
-        'design',
-        'list',
-      ),
+      rejectUnknownFlags(['--page', '1'], ['--page', '--limit'], 'design', 'list'),
     ).not.toThrow();
   });
 
@@ -28,17 +23,12 @@ describe('unknown flags', () => {
   });
 
   it('ignores --help and positionals', () => {
-    expect(() =>
-      rejectUnknownFlags(['my-name', '--help'], [], 'design', 'view'),
-    ).not.toThrow();
+    expect(() => rejectUnknownFlags(['my-name', '--help'], [], 'design', 'view')).not.toThrow();
   });
 
   it('reads repeated and comma-separated flag values', () => {
-    expect(
-      getFlagValues(
-        ['--kind', 'kubernetes,meshery', '-k=grafana'],
-        ['--kind', '-k'],
-      ),
-    ).toEqual(['kubernetes', 'meshery', 'grafana']);
+    expect(getFlagValues(['--kind', 'kubernetes,meshery', '-k=grafana'], ['--kind', '-k'])).toEqual(
+      ['kubernetes', 'meshery', 'grafana'],
+    );
   });
 });

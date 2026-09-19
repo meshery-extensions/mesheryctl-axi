@@ -28,12 +28,7 @@ export function pluck(key: string, subkey: string, as?: string): FieldDef {
   return { type: 'pluck', key, subkey, as };
 }
 
-export function joinArray(
-  key: string,
-  subkey: string,
-  as?: string,
-  empty = 'none',
-): FieldDef {
+export function joinArray(key: string, subkey: string, as?: string, empty = 'none'): FieldDef {
   return { type: 'joinArray', key, subkey, as, empty };
 }
 
@@ -41,10 +36,7 @@ export function lower(key: string, as?: string): FieldDef {
   return { type: 'lower', key, as };
 }
 
-export function custom(
-  as: string,
-  fn: (item: Record<string, unknown>) => unknown,
-): FieldDef {
+export function custom(as: string, fn: (item: Record<string, unknown>) => unknown): FieldDef {
   return { type: 'custom', as, fn };
 }
 
@@ -64,9 +56,7 @@ export function extract(
 
       case 'pluck':
         result[outputKey] =
-          (item[def.key] as Record<string, unknown> | undefined)?.[
-            def.subkey
-          ] ?? null;
+          (item[def.key] as Record<string, unknown> | undefined)?.[def.subkey] ?? null;
         break;
 
       case 'joinArray': {
@@ -75,9 +65,7 @@ export function extract(
         if (Array.isArray(arr) && arr.length > 0) {
           result[outputKey] = arr
             .map((x: unknown) =>
-              typeof x === 'string'
-                ? x
-                : (x as Record<string, unknown>)[def.subkey],
+              typeof x === 'string' ? x : (x as Record<string, unknown>)[def.subkey],
             )
             .join(',');
         } else {
@@ -89,8 +77,7 @@ export function extract(
 
       case 'lower': {
         const value = item[def.key];
-        result[outputKey] =
-          typeof value === 'string' ? value.toLowerCase() : value;
+        result[outputKey] = typeof value === 'string' ? value.toLowerCase() : value;
 
         break;
       }
@@ -101,9 +88,7 @@ export function extract(
 
       default: {
         const _exhaustive: never = def;
-        throw new Error(
-          `Unknown field type: ${(_exhaustive as FieldDef).type}`,
-        );
+        throw new Error(`Unknown field type: ${(_exhaustive as FieldDef).type}`);
       }
     }
   }
@@ -138,9 +123,7 @@ export function renderListCounts(count: number, total?: number): string {
 
 /** Render a deterministic status aggregate. */
 export function renderStatusSummary(summary: Record<string, number>): string {
-  const sorted = Object.fromEntries(
-    Object.entries(summary).sort(([a], [b]) => a.localeCompare(b)),
-  );
+  const sorted = Object.fromEntries(Object.entries(summary).sort(([a], [b]) => a.localeCompare(b)));
   return encode({ status: sorted });
 }
 
@@ -153,11 +136,7 @@ export function renderHelp(lines: string[]): string {
 }
 
 /** Render an error in TOON format. */
-export function renderError(
-  message: string,
-  code: string,
-  suggestions: string[] = [],
-): string {
+export function renderError(message: string, code: string, suggestions: string[] = []): string {
   const blocks = [encode({ error: message, code })];
 
   if (suggestions.length > 0) {

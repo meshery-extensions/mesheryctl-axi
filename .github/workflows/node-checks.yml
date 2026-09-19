@@ -2,8 +2,7 @@ name: Node Checks
 
 # Adapted from layer5io/sistent's node-checks.yml. Builds the package with
 # `tsc`, runs the vitest suite, and smoke-runs the built bin on every
-# supported Node.js LTS line. Lint/format steps are added once the repo has
-# ESLint/Prettier configured.
+# supported Node.js LTS line, and runs ESLint and Prettier before the build.
 
 on:
   pull_request:

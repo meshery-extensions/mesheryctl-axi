@@ -32,11 +32,7 @@ describe('TOON encoding', () => {
       { id: '2', name: 'b' },
     ];
 
-    const toon = renderList(
-      'connections',
-      items,
-      [field('id'), field('name')],
-    );
+    const toon = renderList('connections', items, [field('id'), field('name')]);
 
     expect(toon).toContain('connections');
     expect(toon).toContain('1');
@@ -45,11 +41,7 @@ describe('TOON encoding', () => {
   });
 
   it('renderDetail encodes a single object as TOON', () => {
-    const toon = renderDetail(
-      'connection',
-      { id: 'x', name: 'y' },
-      [field('id'), field('name')],
-    );
+    const toon = renderDetail('connection', { id: 'x', name: 'y' }, [field('id'), field('name')]);
 
     expect(toon).toContain('connection');
     expect(toon).toContain('x');
