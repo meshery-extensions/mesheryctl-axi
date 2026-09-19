@@ -214,9 +214,7 @@ describe('connection list via Server API', () => {
       return jsonResponse({ connections: [] });
     });
 
-    await expect(
-      connectionCommand(['list', '--fields', 'bogus']),
-    ).rejects.toMatchObject({
+    await expect(connectionCommand(['list', '--fields', 'bogus'])).rejects.toMatchObject({
       code: 'VALIDATION_ERROR',
       suggestions: [expect.stringContaining('id, name, status, kind, type')],
     });
@@ -262,25 +260,15 @@ describe('connection list via Server API', () => {
       }),
     );
 
-    const out = await connectionCommand([
-      'list',
-      '--pagesize',
-      '2',
-      '--kind',
-      'kubernetes',
-    ]);
+    const out = await connectionCommand(['list', '--pagesize', '2', '--kind', 'kubernetes']);
 
-    expect(out).toContain(
-      'mesheryctl-axi connection list --page 2 --pagesize 2 --kind kubernetes',
-    );
+    expect(out).toContain('mesheryctl-axi connection list --page 2 --pagesize 2 --kind kubernetes');
   });
 
   it('definitive empty state', async () => {
     setServerAuth(fakeAuth);
 
-    setServerFetcher(async () =>
-      jsonResponse({ connections: [], total_count: 0 }),
-    );
+    setServerFetcher(async () => jsonResponse({ connections: [], total_count: 0 }));
 
     const out = await connectionCommand(['list']);
 
@@ -289,20 +277,12 @@ describe('connection list via Server API', () => {
   });
 
   it('rejects unknown flags', async () => {
-    await expect(
-      connectionCommand(['list', '--nope']),
-    ).rejects.toBeInstanceOf(AxiError);
+    await expect(connectionCommand(['list', '--nope'])).rejects.toBeInstanceOf(AxiError);
   });
 
   it('view uses mesheryctl connection view --output-format json (not exp)', async () => {
     setMesheryctlRunner(async (_bin, args) => {
-      expect(args).toEqual([
-        'connection',
-        'view',
-        'c1',
-        '--output-format',
-        'json',
-      ]);
+      expect(args).toEqual(['connection', 'view', 'c1', '--output-format', 'json']);
       expect(args).not.toContain('exp');
 
       return ok(
@@ -323,13 +303,7 @@ describe('connection list via Server API', () => {
 
   it('applies --fields to view and accepts flags before the id', async () => {
     setMesheryctlRunner(async (_bin, args) => {
-      expect(args).toEqual([
-        'connection',
-        'view',
-        'c1',
-        '--output-format',
-        'json',
-      ]);
+      expect(args).toEqual(['connection', 'view', 'c1', '--output-format', 'json']);
 
       return ok(
         JSON.stringify({
@@ -340,12 +314,7 @@ describe('connection list via Server API', () => {
       );
     });
 
-    const out = await connectionCommand([
-      'view',
-      '--fields',
-      'id,name',
-      'c1',
-    ]);
+    const out = await connectionCommand(['view', '--fields', 'id,name', 'c1']);
 
     expect(out).toContain('connection:');
     expect(out).toContain('id: c1');
@@ -356,17 +325,10 @@ describe('connection list via Server API', () => {
 
 describe('design content is never TOON', () => {
   it('returns YAML content verbatim with exact argv', async () => {
-    const yaml =
-      'apiVersion: core.meshery.io/v1alpha1\nkind: Design\nmetadata:\n  name: demo\n';
+    const yaml = 'apiVersion: core.meshery.io/v1alpha1\nkind: Design\nmetadata:\n  name: demo\n';
 
     setMesheryctlRunner(async (_bin, args) => {
-      expect(args).toEqual([
-        'design',
-        'view',
-        'demo',
-        '--output-format',
-        'yaml',
-      ]);
+      expect(args).toEqual(['design', 'view', 'demo', '--output-format', 'yaml']);
 
       return ok(yaml);
     });
@@ -384,23 +346,12 @@ describe('model content is never TOON', () => {
     const json = '{\n  "name": "kubernetes",\n  "version": "v1.0.0"\n}\n';
 
     setMesheryctlRunner(async (_bin, args) => {
-      expect(args).toEqual([
-        'model',
-        'view',
-        'kubernetes',
-        '--output-format',
-        'json',
-      ]);
+      expect(args).toEqual(['model', 'view', 'kubernetes', '--output-format', 'json']);
 
       return ok(json);
     });
 
-    const out = await modelCommand([
-      'content',
-      'kubernetes',
-      '--format',
-      'json',
-    ]);
+    const out = await modelCommand(['content', 'kubernetes', '--format', 'json']);
 
     expect(out).toBe(json);
     expect(out.trim().startsWith('{')).toBe(true);
@@ -515,9 +466,7 @@ describe('system status/context', () => {
     // writing is not needed if we call with mocked load - use server auth path via
     // temporarily setting env and a temp config in a dedicated test file.
     // Here: ensure command rejects unknown flags and help works.
-    await expect(
-      systemCommand(['context', '--bogus']),
-    ).rejects.toMatchObject({
+    await expect(systemCommand(['context', '--bogus'])).rejects.toMatchObject({
       code: 'VALIDATION_ERROR',
     });
   });
@@ -525,10 +474,7 @@ describe('system status/context', () => {
 
 describe('MESHERYCTL_INCOMPATIBLE', () => {
   it('maps unknown flag to MESHERYCTL_INCOMPATIBLE', () => {
-    const err = mapMesheryctlError(
-      'Error: unknown flag: --output-format',
-      1,
-    );
+    const err = mapMesheryctlError('Error: unknown flag: --output-format', 1);
 
     expect(err).toBeInstanceOf(AxiError);
     expect(err.code).toBe('MESHERYCTL_INCOMPATIBLE');
@@ -536,10 +482,7 @@ describe('MESHERYCTL_INCOMPATIBLE', () => {
   });
 
   it('maps unknown command similarly', () => {
-    const err = mapMesheryctlError(
-      'Error: unknown command "exp"',
-      1,
-    );
+    const err = mapMesheryctlError('Error: unknown command "exp"', 1);
 
     expect(err.code).toBe('MESHERYCTL_INCOMPATIBLE');
   });
@@ -547,25 +490,19 @@ describe('MESHERYCTL_INCOMPATIBLE', () => {
 
 describe('unknown flags non-zero path via commands', () => {
   it('design list unknown flag', async () => {
-    await expect(
-      designCommand(['list', '--bogus']),
-    ).rejects.toMatchObject({
+    await expect(designCommand(['list', '--bogus'])).rejects.toMatchObject({
       code: 'VALIDATION_ERROR',
     });
   });
 
   it('model view unknown flag', async () => {
-    await expect(
-      modelCommand(['view', 'x', '--weird']),
-    ).rejects.toMatchObject({
+    await expect(modelCommand(['view', 'x', '--weird'])).rejects.toMatchObject({
       code: 'VALIDATION_ERROR',
     });
   });
 
   it('component list unknown flag', async () => {
-    await expect(
-      componentCommand(['list', '--nope']),
-    ).rejects.toMatchObject({
+    await expect(componentCommand(['list', '--nope'])).rejects.toMatchObject({
       code: 'VALIDATION_ERROR',
     });
   });

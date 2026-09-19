@@ -3,12 +3,7 @@ import { AxiError } from '../errors.js';
 import { selectFields } from '../fields.js';
 import { asObject, mesheryctlJson } from '../mesheryctl.js';
 import { API } from '../paths.js';
-import {
-  listQueryFromFlags,
-  listTotal,
-  nextPage,
-  serverGetJson,
-} from '../server.js';
+import { listQueryFromFlags, listTotal, nextPage, serverGetJson } from '../server.js';
 import { getSuggestions } from '../suggestions.js';
 import {
   emptyState,
@@ -38,12 +33,7 @@ examples:
   mesheryctl-axi component view <name>
 `;
 
-const listSchema: FieldDef[] = [
-  field('name'),
-  field('kind'),
-  field('model'),
-  field('version'),
-];
+const listSchema: FieldDef[] = [field('name'), field('kind'), field('model'), field('version')];
 
 const viewSchema: FieldDef[] = [
   field('name'),
@@ -61,14 +51,11 @@ export function componentViewArgv(name: string, format: string): string[] {
   return ['component', 'view', name, '--output-format', format];
 }
 
-function normalizeComponent(
-  item: Record<string, unknown>,
-): Record<string, unknown> {
+function normalizeComponent(item: Record<string, unknown>): Record<string, unknown> {
   const model = item['model'];
   const modelName =
     typeof model === 'object' && model !== null
-      ? ((model as Record<string, unknown>)['name'] ??
-        (model as Record<string, unknown>)['Name'])
+      ? ((model as Record<string, unknown>)['name'] ?? (model as Record<string, unknown>)['Name'])
       : model;
 
   const component = item['component'];
@@ -79,11 +66,7 @@ function normalizeComponent(
       : undefined);
 
   return {
-    name:
-      item['name'] ??
-      item['displayName'] ??
-      item['DisplayName'] ??
-      item['Name'],
+    name: item['name'] ?? item['displayName'] ?? item['DisplayName'] ?? item['Name'],
     kind: item['kind'] ?? item['Kind'],
     model: modelName,
     version,
@@ -114,17 +97,14 @@ async function listComponents(args: string[]): Promise<string> {
 
   return renderOutput([
     renderListCounts(items.length, total),
-    isEmpty
-      ? emptyState('components')
-      : renderList('components', items, schema),
+    isEmpty ? emptyState('components') : renderList('components', items, schema),
     renderHelp(
       getSuggestions({
         domain: 'component',
         action: 'list',
         isEmpty,
         nextPage: nextPage(q.page, q.pagesize, items.length, total),
-        nextPageFlags:
-          q.pagesize === 10 ? [] : ['--pagesize', String(q.pagesize)],
+        nextPageFlags: q.pagesize === 10 ? [] : ['--pagesize', String(q.pagesize)],
       }),
     ),
   ]);
@@ -158,21 +138,11 @@ export async function componentCommand(args: string[]): Promise<string> {
 
   switch (sub) {
     case 'list':
-      rejectUnknownFlags(
-        args.slice(1),
-        COMPONENT_FLAGS.list,
-        'component',
-        'list',
-      );
+      rejectUnknownFlags(args.slice(1), COMPONENT_FLAGS.list, 'component', 'list');
       return listComponents(args.slice(1));
 
     case 'view':
-      rejectUnknownFlags(
-        args.slice(1),
-        COMPONENT_FLAGS.view,
-        'component',
-        'view',
-      );
+      rejectUnknownFlags(args.slice(1), COMPONENT_FLAGS.view, 'component', 'view');
       return viewComponent(args.slice(1));
 
     default:

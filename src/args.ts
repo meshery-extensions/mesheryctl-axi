@@ -25,10 +25,7 @@ export function getFlag(args: string[], name: string): string | undefined {
 }
 
 /** Get all values for repeatable flags, including comma-separated values. */
-export function getFlagValues(
-  args: string[],
-  names: readonly string[],
-): string[] {
+export function getFlagValues(args: string[], names: readonly string[]): string[] {
   const values: string[] = [];
   const nameSet = new Set(names);
 
@@ -130,9 +127,6 @@ export function rejectUnknownFlags(
   throw new AxiError(
     `unknown flag${unknown.length > 1 ? 's' : ''} for mesheryctl-axi ${command} ${sub}: ${list}`,
     'VALIDATION_ERROR',
-    [
-      `mesheryctl-axi ${command} ${sub} [flags]`,
-      `mesheryctl-axi ${command} ${sub} --help`,
-    ],
+    [`mesheryctl-axi ${command} ${sub} [flags]`, `mesheryctl-axi ${command} ${sub} --help`],
   );
 }

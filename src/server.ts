@@ -51,16 +51,10 @@ function buildUrl(
 }
 
 /** Read pagination total from current and legacy Meshery response envelopes. */
-export function listTotal(
-  payload: Record<string, unknown>,
-): number | undefined {
-  const value =
-    payload['totalCount'] ?? payload['total_count'] ?? payload['total'];
+export function listTotal(payload: Record<string, unknown>): number | undefined {
+  const value = payload['totalCount'] ?? payload['total_count'] ?? payload['total'];
 
-  if (
-    typeof value !== 'number' &&
-    (typeof value !== 'string' || value.trim() === '')
-  ) {
+  if (typeof value !== 'number' && (typeof value !== 'string' || value.trim() === '')) {
     return undefined;
   }
 
@@ -77,8 +71,7 @@ export function nextPage(
   total?: number,
 ): number | undefined {
   const fullPage = itemCount === pageSize;
-  const hasMore =
-    fullPage && (total === undefined || (page + 1) * pageSize < total);
+  const hasMore = fullPage && (total === undefined || (page + 1) * pageSize < total);
 
   return hasMore ? page + 2 : undefined;
 }
@@ -88,15 +81,11 @@ export function nextPage(
  * List paths use this interim bridge until mesheryctl lists support -o json
  * (meshery/meshery#21893).
  */
-export async function serverGetJson<T = unknown>(
-  options: ServerGetOptions,
-): Promise<T> {
+export async function serverGetJson<T = unknown>(options: ServerGetOptions): Promise<T> {
   const auth =
     options.auth ??
     authOverride ??
-    (options.anonymous
-      ? await loadMesheryAuth().catch(() => null)
-      : await loadMesheryAuth());
+    (options.anonymous ? await loadMesheryAuth().catch(() => null) : await loadMesheryAuth());
 
   // Anonymous version probe still needs an endpoint; fall back to localhost.
   const endpoint =
@@ -112,8 +101,7 @@ export async function serverGetJson<T = unknown>(
 
   if (!options.anonymous && auth) {
     // Cookie names match mesheryctl pkg/utils AddAuthDetails.
-    headers['Cookie'] =
-      `token=${auth.tokenValue}; meshery-provider=${auth.providerValue}`;
+    headers['Cookie'] = `token=${auth.tokenValue}; meshery-provider=${auth.providerValue}`;
   }
 
   const fetchImpl = fetcherOverride ?? fetch;
@@ -128,35 +116,25 @@ export async function serverGetJson<T = unknown>(
         e instanceof Error ? e.message : String(e)
       }`,
       'UNKNOWN',
-      [
-        'Ensure Meshery Server is running',
-        'Check `mesheryctl system context view` endpoint',
-      ],
+      ['Ensure Meshery Server is running', 'Check `mesheryctl system context view` endpoint'],
     );
   }
 
   if (res.status === 401 || res.status === 403) {
-    throw new AxiError(
-      `Meshery authentication required (HTTP ${res.status})`,
-      'AUTH_REQUIRED',
-      ['Run `mesheryctl system login` (or provider login) and retry'],
-    );
+    throw new AxiError(`Meshery authentication required (HTTP ${res.status})`, 'AUTH_REQUIRED', [
+      'Run `mesheryctl system login` (or provider login) and retry',
+    ]);
   }
 
   if (res.status === 404) {
-    throw new AxiError(
-      `Resource not found at ${options.path}`,
-      'NOT_FOUND',
-    );
+    throw new AxiError(`Resource not found at ${options.path}`, 'NOT_FOUND');
   }
 
   if (!res.ok) {
     const body = (await res.text()).slice(0, 200);
 
     throw new AxiError(
-      `Meshery Server error HTTP ${res.status}: ${
-        body || res.statusText
-      }`,
+      `Meshery Server error HTTP ${res.status}: ${body || res.statusText}`,
       'UNKNOWN',
     );
   }
@@ -164,19 +142,13 @@ export async function serverGetJson<T = unknown>(
   const text = await res.text();
 
   if (!text.trim()) {
-    throw new AxiError(
-      'Unexpected empty Meshery Server response',
-      'UNKNOWN',
-    );
+    throw new AxiError('Unexpected empty Meshery Server response', 'UNKNOWN');
   }
 
   try {
     return JSON.parse(text) as T;
   } catch {
-    throw new AxiError(
-      `Unexpected Meshery Server response: ${text.slice(0, 200)}`,
-      'UNKNOWN',
-    );
+    throw new AxiError(`Unexpected Meshery Server response: ${text.slice(0, 200)}`, 'UNKNOWN');
   }
 }
 
@@ -184,25 +156,19 @@ export async function serverGetJson<T = unknown>(
  * Convert 1-based user --page to mesheryctl's zero-based API page.
  * Defaults to page 0 / pagesize 10 when unset (mesheryctl display defaults).
  */
-export function listQueryFromFlags(args: {
-  page?: string;
-  pagesize?: string;
-}): {
+export function listQueryFromFlags(args: { page?: string; pagesize?: string }): {
   page: number;
   pagesize: number;
 } {
   const pageOneBased = args.page ? Number.parseInt(args.page, 10) : 1;
   const pagesize = args.pagesize ? Number.parseInt(args.pagesize, 10) : 10;
 
-  const page = Number.isFinite(pageOneBased)
-    ? Math.max(0, pageOneBased - 1)
-    : 0;
+  const page = Number.isFinite(pageOneBased) ? Math.max(0, pageOneBased - 1) : 0;
 
   return {
     page,
     // Meshery Server caps pageSize at 100; mirror that so next-page detection
     // uses the page size the server actually applied.
-    pagesize:
-      Number.isFinite(pagesize) && pagesize > 0 ? Math.min(pagesize, 100) : 10,
+    pagesize: Number.isFinite(pagesize) && pagesize > 0 ? Math.min(pagesize, 100) : 10,
   };
 }

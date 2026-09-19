@@ -3,12 +3,7 @@ import { AxiError } from '../errors.js';
 import { selectFields } from '../fields.js';
 import { asObject, mesheryctlExec, mesheryctlJson } from '../mesheryctl.js';
 import { API } from '../paths.js';
-import {
-  listQueryFromFlags,
-  listTotal,
-  nextPage,
-  serverGetJson,
-} from '../server.js';
+import { listQueryFromFlags, listTotal, nextPage, serverGetJson } from '../server.js';
 import { getSuggestions } from '../suggestions.js';
 import {
   emptyState,
@@ -67,9 +62,7 @@ export function modelViewArgv(name: string, format: string): string[] {
   return ['model', 'view', name, '--output-format', format];
 }
 
-function normalizeModel(
-  item: Record<string, unknown>,
-): Record<string, unknown> {
+function normalizeModel(item: Record<string, unknown>): Record<string, unknown> {
   const category = item['category'];
 
   const categoryName =
@@ -82,8 +75,7 @@ function normalizeModel(
     name: item['name'] ?? item['Name'],
     version: item['version'] ?? item['Version'],
     category: categoryName,
-    displayname:
-      item['displayname'] ?? item['displayName'] ?? item['DisplayName'],
+    displayname: item['displayname'] ?? item['displayName'] ?? item['DisplayName'],
     registrant: item['registrant'] ?? item['Registrant'],
   };
 }
@@ -118,8 +110,7 @@ async function listModels(args: string[]): Promise<string> {
         action: 'list',
         isEmpty,
         nextPage: nextPage(q.page, q.pagesize, items.length, total),
-        nextPageFlags:
-          q.pagesize === 10 ? [] : ['--pagesize', String(q.pagesize)],
+        nextPageFlags: q.pagesize === 10 ? [] : ['--pagesize', String(q.pagesize)],
       }),
     ),
   ]);
@@ -157,10 +148,7 @@ async function contentModel(args: string[]): Promise<string> {
   const format = (getFlag(args, '--format') ?? 'json').toLowerCase();
 
   if (format !== 'yaml' && format !== 'json') {
-    throw new AxiError(
-      `--format must be yaml or json (got ${format})`,
-      'VALIDATION_ERROR',
-    );
+    throw new AxiError(`--format must be yaml or json (got ${format})`, 'VALIDATION_ERROR');
   }
 
   const raw = await mesheryctlExec(modelViewArgv(name, format));
@@ -185,12 +173,7 @@ export async function modelCommand(args: string[]): Promise<string> {
       return viewModel(args.slice(1));
 
     case 'content':
-      rejectUnknownFlags(
-        args.slice(1),
-        MODEL_FLAGS.content,
-        'model',
-        'content',
-      );
+      rejectUnknownFlags(args.slice(1), MODEL_FLAGS.content, 'model', 'content');
       return contentModel(args.slice(1));
 
     default:

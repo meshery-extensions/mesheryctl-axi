@@ -1,19 +1,9 @@
-import {
-  getFlag,
-  getFlagValues,
-  getPositional,
-  rejectUnknownFlags,
-} from '../args.js';
+import { getFlag, getFlagValues, getPositional, rejectUnknownFlags } from '../args.js';
 import { AxiError } from '../errors.js';
 import { selectFields } from '../fields.js';
 import { asObject, mesheryctlJson } from '../mesheryctl.js';
 import { API } from '../paths.js';
-import {
-  listQueryFromFlags,
-  listTotal,
-  nextPage,
-  serverGetJson,
-} from '../server.js';
+import { listQueryFromFlags, listTotal, nextPage, serverGetJson } from '../server.js';
 import { getSuggestions } from '../suggestions.js';
 import {
   emptyState,
@@ -29,17 +19,7 @@ import {
 } from '../toon.js';
 
 export const CONNECTION_FLAGS: Record<string, readonly string[]> = {
-  list: [
-    '--page',
-    '--pagesize',
-    '--limit',
-    '--fields',
-    '--full',
-    '--kind',
-    '-k',
-    '--status',
-    '-s',
-  ],
+  list: ['--page', '--pagesize', '--limit', '--fields', '--full', '--kind', '-k', '--status', '-s'],
   view: ['--fields', '--full'],
 };
 
@@ -81,9 +61,7 @@ export function connectionViewArgv(name: string, format: string): string[] {
   return ['connection', 'view', name, '--output-format', format];
 }
 
-function normalizeConnection(
-  item: Record<string, unknown>,
-): Record<string, unknown> {
+function normalizeConnection(item: Record<string, unknown>): Record<string, unknown> {
   return {
     id: item['id'] ?? item['ID'],
     name: item['name'] ?? item['Name'],
@@ -96,9 +74,7 @@ function normalizeConnection(
 }
 
 function suggestionValue(value: string): string {
-  return /^[A-Za-z0-9._:/-]+$/.test(value)
-    ? value
-    : `'${value.replaceAll("'", `'\\''`)}'`;
+  return /^[A-Za-z0-9._:/-]+$/.test(value) ? value : `'${value.replaceAll("'", `'\\''`)}'`;
 }
 
 async function listConnections(args: string[]): Promise<string> {
@@ -140,11 +116,7 @@ async function listConnections(args: string[]): Promise<string> {
   // so valid rows are never silently dropped.
   let sourceSummaryValid = false;
 
-  if (
-    sourceSummary &&
-    typeof sourceSummary === 'object' &&
-    !Array.isArray(sourceSummary)
-  ) {
+  if (sourceSummary && typeof sourceSummary === 'object' && !Array.isArray(sourceSummary)) {
     // Accept only numbers and non-empty numeric strings: booleans, null,
     // and arrays coerce to 0/1 via Number() and must not pass validation.
     const entries = Object.entries(sourceSummary).map(([status, value]) => ({
@@ -158,8 +130,7 @@ async function listConnections(args: string[]): Promise<string> {
     }));
 
     sourceSummaryValid =
-      entries.length > 0 &&
-      entries.every(({ count }) => Number.isInteger(count) && count >= 0);
+      entries.length > 0 && entries.every(({ count }) => Number.isInteger(count) && count >= 0);
 
     if (sourceSummaryValid) {
       for (const { status, count } of entries) {
@@ -181,9 +152,7 @@ async function listConnections(args: string[]): Promise<string> {
 
   return renderOutput([
     renderListCounts(items.length, total),
-    isEmpty
-      ? emptyState('connections')
-      : renderList('connections', items, schema),
+    isEmpty ? emptyState('connections') : renderList('connections', items, schema),
     Object.keys(summary).length > 0 ? renderStatusSummary(summary) : '',
     renderHelp(
       getSuggestions({
@@ -194,10 +163,7 @@ async function listConnections(args: string[]): Promise<string> {
         nextPageFlags: [
           ...(q.pagesize === 10 ? [] : ['--pagesize', String(q.pagesize)]),
           ...kinds.flatMap((kind) => ['--kind', suggestionValue(kind)]),
-          ...statuses.flatMap((status) => [
-            '--status',
-            suggestionValue(status),
-          ]),
+          ...statuses.flatMap((status) => ['--status', suggestionValue(status)]),
         ],
       }),
     ),
@@ -234,21 +200,11 @@ export async function connectionCommand(args: string[]): Promise<string> {
 
   switch (sub) {
     case 'list':
-      rejectUnknownFlags(
-        args.slice(1),
-        CONNECTION_FLAGS.list,
-        'connection',
-        'list',
-      );
+      rejectUnknownFlags(args.slice(1), CONNECTION_FLAGS.list, 'connection', 'list');
       return listConnections(args.slice(1));
 
     case 'view':
-      rejectUnknownFlags(
-        args.slice(1),
-        CONNECTION_FLAGS.view,
-        'connection',
-        'view',
-      );
+      rejectUnknownFlags(args.slice(1), CONNECTION_FLAGS.view, 'connection', 'view');
       return viewConnection(args.slice(1));
 
     default:

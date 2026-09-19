@@ -21,9 +21,7 @@ export function getSuggestions(ctx: SuggestionContext): string[] {
   }
 
   if (isEmpty) {
-    hints.push(
-      `No ${domain} resources found - create one with mesheryctl or Meshery UI`,
-    );
+    hints.push(`No ${domain} resources found - create one with mesheryctl or Meshery UI`);
   }
 
   switch (domain) {
@@ -77,8 +75,7 @@ export function getSuggestions(ctx: SuggestionContext): string[] {
   }
 
   if (nextPage !== undefined) {
-    const suffix =
-      nextPageFlags.length > 0 ? ` ${nextPageFlags.join(' ')}` : '';
+    const suffix = nextPageFlags.length > 0 ? ` ${nextPageFlags.join(' ')}` : '';
 
     hints.push(`mesheryctl-axi ${domain} list --page ${nextPage}${suffix}`);
   }

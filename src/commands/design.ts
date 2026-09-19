@@ -3,12 +3,7 @@ import { AxiError } from '../errors.js';
 import { selectFields } from '../fields.js';
 import { asObject, mesheryctlExec, mesheryctlJson } from '../mesheryctl.js';
 import { API } from '../paths.js';
-import {
-  listQueryFromFlags,
-  listTotal,
-  nextPage,
-  serverGetJson,
-} from '../server.js';
+import { listQueryFromFlags, listTotal, nextPage, serverGetJson } from '../server.js';
 import { getSuggestions } from '../suggestions.js';
 import {
   emptyState,
@@ -69,12 +64,9 @@ export function designViewArgv(name: string, format: string): string[] {
   return ['design', 'view', name, '--output-format', format];
 }
 
-function normalizeDesign(
-  item: Record<string, unknown>,
-): Record<string, unknown> {
+function normalizeDesign(item: Record<string, unknown>): Record<string, unknown> {
   // Server-canonical spelling is camelCase userId (MesheryPattern.UserID).
-  const user =
-    item['user_id'] ?? item['userId'] ?? item['userID'] ?? item['UserID'];
+  const user = item['user_id'] ?? item['userId'] ?? item['userID'] ?? item['UserID'];
 
   return {
     id: item['id'] ?? item['ID'],
@@ -119,8 +111,7 @@ async function listDesigns(args: string[]): Promise<string> {
         action: 'list',
         isEmpty,
         nextPage: nextPage(q.page, q.pagesize, items.length, total),
-        nextPageFlags:
-          q.pagesize === 10 ? [] : ['--pagesize', String(q.pagesize)],
+        nextPageFlags: q.pagesize === 10 ? [] : ['--pagesize', String(q.pagesize)],
       }),
     ),
   ]);
@@ -158,10 +149,7 @@ async function contentDesign(args: string[]): Promise<string> {
   const format = (getFlag(args, '--format') ?? 'yaml').toLowerCase();
 
   if (format !== 'yaml' && format !== 'json') {
-    throw new AxiError(
-      `--format must be yaml or json (got ${format})`,
-      'VALIDATION_ERROR',
-    );
+    throw new AxiError(`--format must be yaml or json (got ${format})`, 'VALIDATION_ERROR');
   }
 
   // Pass through mesheryctl's output-format so content stays schema-faithful.
@@ -188,12 +176,7 @@ export async function designCommand(args: string[]): Promise<string> {
       return viewDesign(args.slice(1));
 
     case 'content':
-      rejectUnknownFlags(
-        args.slice(1),
-        DESIGN_FLAGS.content,
-        'design',
-        'content',
-      );
+      rejectUnknownFlags(args.slice(1), DESIGN_FLAGS.content, 'design', 'content');
       return contentDesign(args.slice(1));
 
     default:
