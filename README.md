@@ -66,7 +66,7 @@ CLI:
 ```bash
 /absolute/path/to/mesheryctl system login
 /absolute/path/to/mesheryctl system context view
-MESHERYCTL_BIN=/absolute/path/to/mesheryctl make dev
+MESHERYCTL_BIN=/absolute/path/to/mesheryctl npx -y mesheryctl-axi
 ```
 
 The wrapper reads the active context and token from the normal `mesheryctl`
@@ -75,11 +75,10 @@ or `MESHERYCTL_CONFIG` to its `config.yaml` path.
 
 #### 2. Start with the content-first home
 
-During pre-release development, make the no-argument source command the
-agent's first call:
+Make the released package command the agent's first call:
 
 ```bash
-make dev
+npx -y mesheryctl-axi
 ```
 
 The home command reads structured context fields from the authenticated
@@ -123,13 +122,13 @@ active context. They do not scrape tables or pass unsupported JSON flags to
 `mesheryctl`:
 
 ```bash
-make dev ARGS="connection list"
-make dev ARGS="connection list --kind kubernetes --status connected"
-make dev ARGS="connection list --fields id,name"
-make dev ARGS="connection list --full"
-make dev ARGS="design list"
-make dev ARGS="model list"
-make dev ARGS="component list"
+npx -y mesheryctl-axi connection list
+npx -y mesheryctl-axi connection list --kind kubernetes --status connected
+npx -y mesheryctl-axi connection list --fields id,name
+npx -y mesheryctl-axi connection list --full
+npx -y mesheryctl-axi design list
+npx -y mesheryctl-axi model list
+npx -y mesheryctl-axi component list
 ```
 
 A successful empty collection is definitive, for example `connections: 0`.
@@ -197,9 +196,9 @@ Paste this into the repository's `AGENTS.md`, `CLAUDE.md`, or equivalent agent
 instructions:
 
 ```text
-Prefer mesheryctl-axi over raw mesheryctl for Meshery operations. During
-pre-release development, run it from the source checkout with `make dev` and
-pass subcommands through `ARGS`, then follow its `help[]` suggestions. Treat
+Prefer mesheryctl-axi over raw mesheryctl for Meshery operations. Run it with
+`npx -y mesheryctl-axi`, append subcommands directly, and follow its `help[]`
+suggestions. Treat
 list, view, system, and error output as TOON; preserve `design content` and
 `model content` as raw YAML or JSON. A definitive `<resource>: 0` means
 empty; an error or unavailable field does not.
@@ -209,9 +208,9 @@ empty; an error or unavailable field does not.
 
 Contributions are welcome. Please read [CONTRIBUTING.md](CONTRIBUTING.md) and the [Code of Conduct](CODE_OF_CONDUCT.md), and sign off your commits ([DCO](https://docs.meshery.io/project/contributing#signing-off-on-commits-developer-certificate-of-origin)). New to Meshery? Start with the [Newcomers' Guide](https://layer5.io/community/newcomers) and say hello in the [community Slack](https://slack.meshery.io).
 
-List commands use the authenticated Meshery Server API while `mesheryctl` list output remains human-oriented; view and content commands continue to use the CLI's supported structured output. [#12](https://github.com/meshery-extensions/mesheryctl-axi/issues/12) tracks everything left before the first npm release. Issues labelled [`good first issue`](https://github.com/meshery-extensions/mesheryctl-axi/issues?q=is%3Aissue%20is%3Aopen%20label%3A%22good%20first%20issue%22) are a good place to start.
+List commands use the authenticated Meshery Server API while `mesheryctl` list output remains human-oriented; view and content commands continue to use the CLI's supported structured output. The initial npm release roadmap is documented in [#12](https://github.com/meshery-extensions/mesheryctl-axi/issues/12). Issues labelled [`good first issue`](https://github.com/meshery-extensions/mesheryctl-axi/issues?q=is%3Aissue%20is%3Aopen%20label%3A%22good%20first%20issue%22) are a good place to start.
 
-Run these commands from the source checkout during pre-release development:
+Contributors can run these commands from a source checkout:
 
 ```bash
 # Content-first home: description, bin path, best-effort system status/context
