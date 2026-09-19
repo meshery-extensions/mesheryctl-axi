@@ -146,6 +146,46 @@ must not be interpreted as empty results.
 | Successful reporting commands | End with contextual `help[]` suggestions |
 | Successful content commands | Return only raw YAML or JSON, without `help[]` |
 
+#### Example session
+
+Captured from the released binary against a fixture server speaking the real
+Meshery API shapes:
+
+```text
+$ mesheryctl-axi connection list
+count: 2
+total: 2
+connections[2]{id,name,status,kind,type}:
+  c0ffee11-0000-4000-8000-aaaaaaaaaaaa,metal04,connected,kubernetes,platform
+  c0ffee22-0000-4000-8000-bbbbbbbbbbbb,docker-desktop,discovered,kubernetes,platform
+status:
+  connected: 1
+  discovered: 1
+help[1]:
+  mesheryctl-axi connection view <id>
+```
+
+```text
+$ mesheryctl-axi design list --fields name,visibility
+count: 2
+total: 2
+designs[2]{name,visibility}:
+  sock-shop,private
+  istio-bookinfo,public
+help[2]:
+  mesheryctl-axi design view <name>
+  mesheryctl-axi design content <name> --format yaml
+```
+
+```text
+$ mesheryctl-axi connection list --bogus
+error: "unknown flag for mesheryctl-axi connection list: --bogus"
+code: VALIDATION_ERROR
+help[2]:
+  mesheryctl-axi connection list [flags]
+  mesheryctl-axi connection list --help
+```
+
 Errors contain `error`, `code`, and, when available, `help[]`. The error codes
 are `VALIDATION_ERROR`, `AUTH_REQUIRED`, `NOT_FOUND`,
 `MESHERYCTL_NOT_INSTALLED`, `MESHERYCTL_INCOMPATIBLE`, and `UNKNOWN`.
