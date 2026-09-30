@@ -6,7 +6,7 @@ Find the complete set of contributor guides at https://docs.meshery.io/project/c
 
 ## Developing mesheryctl-axi
 
-Install Node.js 22 or newer and
+Install Node.js 22.13 or newer (22.13+, or 24+) and
 [`mesheryctl`](https://docs.meshery.io/installation/mesheryctl) before working on
 the package. Install dependencies, build the TypeScript sources, and run the test
 suite with:

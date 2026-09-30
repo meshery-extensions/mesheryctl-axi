@@ -7,15 +7,19 @@ assignees: ''
 ---
 
 ### Current Behavior
+
 <!-- What can an agent do today, and what limitation does it encounter? -->
 
 ### Desired Behavior
+
 <!-- Describe the proposed agent workflow and expected output. -->
 
 ### Implementation
+
 <!-- Optional: describe a possible implementation or affected commands. -->
 
 ### Output Contract
+
 <!-- Optional: show the proposed TOON, raw YAML/JSON, or structured error output. -->
 
 ```text
@@ -23,6 +27,7 @@ assignees: ''
 ```
 
 ### Acceptance Tests
+
 <!-- List the observable behavior required to complete this request. -->
 
 ---
