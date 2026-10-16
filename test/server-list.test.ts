@@ -33,6 +33,26 @@ describe("list pagination metadata", () => {
     });
   });
 
+  it("uses the last value when a pagination flag is repeated", () => {
+    expect(
+      listQueryFromFlags([
+        "--page",
+        "2",
+        "--page=4",
+        "--pagesize=5",
+        "--pagesize",
+        "8",
+      ]),
+    ).toEqual({ page: 3, pagesize: 8 });
+  });
+
+  it("uses the last value when the --limit alias is repeated", () => {
+    expect(listQueryFromFlags(["--limit=3", "--limit", "7"])).toEqual({
+      page: 0,
+      pagesize: 7,
+    });
+  });
+
   it.each([
     ["--page", "2oops"],
     ["--page=0"],
