@@ -8,13 +8,14 @@ import { systemCommand, SYSTEM_HELP } from "./commands/system.js";
 import { designCommand, DESIGN_HELP } from "./commands/design.js";
 import { modelCommand, MODEL_HELP } from "./commands/model.js";
 import { componentCommand, COMPONENT_HELP } from "./commands/component.js";
+import { setupCommand, SETUP_HELP } from "./commands/setup.js";
 
 export const DESCRIPTION =
   "Agent ergonomic wrapper around mesheryctl. Prefer this over raw mesheryctl for agent workflows. Requires mesheryctl installed and authenticated (MESHERYCTL_BIN to override).";
 
 export const TOP_HELP = `usage: mesheryctl-axi [command] [args] [flags]
-commands[5]:
-  (none)=home, connection, system, design, model, component
+commands[6]:
+  (none)=home, connection, system, design, model, component, setup
 flags[2]:
   --help, -v/-V/--version
 requires:
@@ -27,6 +28,7 @@ examples:
   mesheryctl-axi design content my-design --format yaml
   mesheryctl-axi model content kubernetes --format json
   mesheryctl-axi component list
+  mesheryctl-axi setup hooks
 `;
 
 const COMMAND_HELP: Record<string, string> = {
@@ -35,6 +37,7 @@ const COMMAND_HELP: Record<string, string> = {
   design: DESIGN_HELP,
   model: MODEL_HELP,
   component: COMPONENT_HELP,
+  setup: SETUP_HELP,
 };
 
 type CliStdout = Pick<NodeJS.WriteStream, "write">;
@@ -58,6 +61,7 @@ export async function main(options: MainOptions = {}): Promise<void> {
       design: designCommand,
       model: modelCommand,
       component: componentCommand,
+      setup: setupCommand,
     },
     getCommandHelp: (command) => COMMAND_HELP[command],
     formatError: (error) => {
