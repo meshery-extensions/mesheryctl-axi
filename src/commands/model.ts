@@ -77,15 +77,17 @@ function normalizeModel(
         (category as Record<string, unknown>)["Name"])
       : category;
   const model = item["model"];
-  const releaseVersion =
+  const modelRecord =
     typeof model === "object" && model !== null
-      ? ((model as Record<string, unknown>)["version"] ??
-        (model as Record<string, unknown>)["Version"])
+      ? (model as Record<string, unknown>)
       : undefined;
-  const usableReleaseVersion =
-    typeof releaseVersion === "string" && releaseVersion.trim() !== ""
-      ? releaseVersion.trim()
-      : undefined;
+  const usableReleaseVersion = [
+    modelRecord?.["version"],
+    modelRecord?.["Version"],
+  ].find(
+    (value): value is string =>
+      typeof value === "string" && value.trim() !== "",
+  )?.trim();
   return {
     name: item["name"] ?? item["Name"],
     // The top-level version is the definition schema version. Prefer the
