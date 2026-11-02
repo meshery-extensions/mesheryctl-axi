@@ -472,6 +472,44 @@ describe("list commands use Server API (no --output-format spawn)", () => {
     },
   );
 
+  it("model list trims a padded release version", async () => {
+    setServerAuth(fakeAuth);
+    setServerFetcher(async () =>
+      jsonResponse({
+        models: [
+          {
+            name: "infisical-operator",
+            version: "v1.0.0",
+            model: { version: " v0.11.12 " },
+          },
+        ],
+        totalCount: 1,
+      }),
+    );
+
+    const out = await modelCommand(["list", "--fields", "name,version"]);
+    expect(out).toContain("infisical-operator,v0.11.12");
+  });
+
+  it("model list falls back to the definition schema version for a non-string release version", async () => {
+    setServerAuth(fakeAuth);
+    setServerFetcher(async () =>
+      jsonResponse({
+        models: [
+          {
+            name: "infisical-operator",
+            version: "v1.0.0",
+            model: { version: 11 },
+          },
+        ],
+        totalCount: 1,
+      }),
+    );
+
+    const out = await modelCommand(["list", "--fields", "name,version"]);
+    expect(out).toContain("infisical-operator,v1.0.0");
+  });
+
   it("model view reports the installed release version instead of the definition schema version", async () => {
     setMesheryctlRunner(async (_bin, args) => {
       expect(args).toEqual([
@@ -530,6 +568,46 @@ describe("list commands use Server API (no --output-format spawn)", () => {
       expect(out).toContain("version: v1.0.0");
     },
   );
+
+  it("model view trims a padded release version", async () => {
+    setMesheryctlRunner(async () =>
+      ok(
+        JSON.stringify({
+          name: "infisical-operator",
+          version: "v1.0.0",
+          model: { version: " v0.11.12 " },
+        }),
+      ),
+    );
+
+    const out = await modelCommand([
+      "view",
+      "infisical-operator",
+      "--fields",
+      "name,version",
+    ]);
+    expect(out).toContain("version: v0.11.12");
+  });
+
+  it("model view falls back to the definition schema version for a non-string release version", async () => {
+    setMesheryctlRunner(async () =>
+      ok(
+        JSON.stringify({
+          name: "infisical-operator",
+          version: "v1.0.0",
+          model: { version: 11 },
+        }),
+      ),
+    );
+
+    const out = await modelCommand([
+      "view",
+      "infisical-operator",
+      "--fields",
+      "name,version",
+    ]);
+    expect(out).toContain("version: v1.0.0");
+  });
 
   it("component list", async () => {
     setServerAuth(fakeAuth);
