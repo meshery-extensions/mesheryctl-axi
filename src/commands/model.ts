@@ -82,11 +82,15 @@ function normalizeModel(
       ? ((model as Record<string, unknown>)["version"] ??
         (model as Record<string, unknown>)["Version"])
       : undefined;
+  const usableReleaseVersion =
+    typeof releaseVersion === "string" && releaseVersion.trim() === ""
+      ? undefined
+      : releaseVersion;
   return {
     name: item["name"] ?? item["Name"],
     // The top-level version is the definition schema version. Prefer the
     // nested model release version so agents can identify what is installed.
-    version: releaseVersion ?? item["version"] ?? item["Version"],
+    version: usableReleaseVersion ?? item["version"] ?? item["Version"],
     category: categoryName,
     displayname:
       item["displayname"] ?? item["displayName"] ?? item["DisplayName"],
