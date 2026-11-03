@@ -57,3 +57,20 @@ describe("cli main", () => {
     expect(written).toMatch(/help\[\d+\]:/);
   });
 });
+
+it("renders an extra positional error with a quoting hint", async () => {
+  let written = "";
+  const prevExitCode = process.exitCode;
+  try {
+    await main({
+      argv: ["design", "view", "Pod", "Liveness"],
+      stdout: { write: (chunk: string) => { written += chunk; return true; } },
+    });
+    expect(written).toContain("VALIDATION_ERROR");
+    expect(written).toContain("help[1]:");
+    expect(written).toContain('mesheryctl-axi design view "Pod Liveness"');
+    expect(Number(process.exitCode ?? 0)).toBeGreaterThan(0);
+  } finally {
+    process.exitCode = prevExitCode;
+  }
+});

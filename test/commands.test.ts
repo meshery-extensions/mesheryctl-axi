@@ -503,3 +503,44 @@ describe("unknown flags non-zero path via commands", () => {
     });
   });
 });
+
+describe("view and content positional arguments", () => {
+  const commands = [
+    ["design", "view", designCommand, "--fields", "name"],
+    ["design", "content", designCommand, "--format", "json"],
+    ["model", "view", modelCommand, "--fields", "name"],
+    ["model", "content", modelCommand, "--format", "json"],
+    ["component", "view", componentCommand, "--fields", "name"],
+    ["connection", "view", connectionCommand, "--fields", "name"],
+  ] as const;
+
+  it.each(commands)("%s %s rejects extra positionals before invoking mesheryctl", async (domain, sub, command, flag, value) => {
+    let invoked = false;
+    setMesheryctlRunner(async () => {
+      invoked = true;
+      return ok('{}');
+    });
+    for (const args of [
+      [sub, "Pod", "Liveness"],
+      [sub, flag, value, "Pod", "Liveness"],
+      [sub, "Pod", `${flag}=${value}`, "Liveness"],
+      [sub, "Pod", "--", "Liveness"],
+    ]) {
+      await expect(command(args)).rejects.toMatchObject({
+        code: "VALIDATION_ERROR",
+        suggestions: [expect.stringContaining(`mesheryctl-axi ${domain} ${sub} "Pod Liveness"`)],
+      });
+    }
+    expect(invoked).toBe(false);
+  });
+
+  it.each(commands)("%s %s accepts one quoted name with flag values", async (_domain, sub, command, flag, value) => {
+    let calledArgs: string[] = [];
+    setMesheryctlRunner(async (_bin, args) => {
+      calledArgs = args;
+      return ok('{"name":"Pod Liveness"}');
+    });
+    await command([sub, flag, value, "Pod Liveness"]);
+    expect(calledArgs).toContain("Pod Liveness");
+  });
+});

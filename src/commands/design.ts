@@ -1,4 +1,4 @@
-import { getFlag, getPositional, rejectUnknownFlags } from "../args.js";
+import { getFlag, getSinglePositional, rejectUnknownFlags } from "../args.js";
 import { AxiError } from "../errors.js";
 import { selectFields } from "../fields.js";
 import { asObject, mesheryctlExec, mesheryctlJson } from "../mesheryctl.js";
@@ -119,7 +119,7 @@ async function listDesigns(args: string[]): Promise<string> {
 
 async function viewDesign(args: string[]): Promise<string> {
   const schema = selectFields(args, viewSchema, viewSchema, "design view");
-  const name = getPositional(args, 0, ["--fields"]);
+  const name = getSinglePositional(args, ["--fields"], "design view");
   if (!name) {
     throw new AxiError(
       "Design name is required: mesheryctl-axi design view <name>",
@@ -134,7 +134,7 @@ async function viewDesign(args: string[]): Promise<string> {
 }
 
 async function contentDesign(args: string[]): Promise<string> {
-  const name = getPositional(args, 0, ["--format"]);
+  const name = getSinglePositional(args, ["--format"], "design content");
   if (!name) {
     throw new AxiError(
       "Design name is required: mesheryctl-axi design content <name> [--format yaml|json]",
