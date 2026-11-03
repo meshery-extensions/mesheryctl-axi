@@ -1,6 +1,6 @@
 import {
   getFlagValues,
-  getPositional,
+  getSinglePositional,
   rejectUnknownFlags,
 } from "../args.js";
 import { AxiError } from "../errors.js";
@@ -191,7 +191,7 @@ async function listConnections(args: string[]): Promise<string> {
 
 async function viewConnection(args: string[]): Promise<string> {
   const schema = selectFields(args, viewSchema, viewSchema, "connection view");
-  const id = getPositional(args, 0, ["--fields"]);
+  const id = getSinglePositional(args, ["--fields"], "connection view");
   if (!id) {
     throw new AxiError(
       "Connection id is required: mesheryctl-axi connection view <id>",
