@@ -2,6 +2,7 @@ import { parse as parseYaml } from "yaml";
 import {
   getFlag,
   getPositional,
+  getSinglePositional,
   hasFlag,
   rejectUnknownFlags,
 } from "../args.js";
@@ -228,7 +229,7 @@ async function listDesigns(args: string[]): Promise<string> {
 /** `design view <name>`: one design's metadata, rendered as TOON. */
 async function viewDesign(args: string[]): Promise<string> {
   const schema = selectFields(args, viewSchema, viewSchema, "design view");
-  const name = getPositional(args, 0, ["--fields"]);
+  const name = getSinglePositional(args, ["--fields"], "design view");
   if (!name) {
     throw new AxiError(
       "Design name is required: mesheryctl-axi design view <name>",
@@ -244,7 +245,7 @@ async function viewDesign(args: string[]): Promise<string> {
 
 /** `design content <name>`: the design document as raw YAML or JSON, never TOON. */
 async function contentDesign(args: string[]): Promise<string> {
-  const name = getPositional(args, 0, ["--format"]);
+  const name = getSinglePositional(args, ["--format"], "design content");
   if (!name) {
     throw new AxiError(
       "Design name is required: mesheryctl-axi design content <name> [--format yaml|json]",
