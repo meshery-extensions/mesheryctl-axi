@@ -2,6 +2,7 @@ import { componentViewArgv } from "./commands/component.js";
 import { connectionViewArgv } from "./commands/connection.js";
 import { designViewArgv } from "./commands/design.js";
 import { modelViewArgv } from "./commands/model.js";
+import { modelImportArgv } from "./commands/model-import.js";
 
 /**
  * One wrapper-to-`mesheryctl` call the contract suite checks against a real
@@ -31,10 +32,16 @@ function viewCase(
 /**
  * Every argv this package sends to the `mesheryctl` binary. Lists, status,
  * and context go through the Server API or local config instead (see #5), so
- * only `view` calls appear here. Add a case here whenever a command starts
+ * their calls do not appear here. Add a case here whenever a command starts
  * spawning a new `mesheryctl` subcommand or flag.
  */
 export const MESHERYCTL_CONTRACT_CASES: MesheryctlContractCase[] = [
+  {
+    axi: "model import",
+    path: ["model", "import"],
+    flags: ["--file"],
+    argv: modelImportArgv(["-f", "./my model"]),
+  },
   viewCase("design view", ["design", "view"], designViewArgv("<name>", "json")),
   viewCase(
     "design content",
