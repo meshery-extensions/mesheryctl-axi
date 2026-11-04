@@ -1,3 +1,7 @@
+import { readFile } from "node:fs/promises";
+import { homedir } from "node:os";
+import { join } from "node:path";
+
 import { rejectUnknownFlags } from "../args.js";
 import { loadMesheryAuth, tryLoadMesheryAuth } from "../config.js";
 import { AxiError } from "../errors.js";
@@ -41,6 +45,53 @@ const contextSchema: FieldDef[] = [
   field("channel"),
 ];
 
+async function resolveProvider(
+  auth: Awaited<ReturnType<typeof tryLoadMesheryAuth>>,
+): Promise<string> {
+  // 1. Initial check from context in config.yaml
+  if (auth?.context.provider && auth.context.provider.trim() !== "") {
+    return auth.context.provider.trim();
+  }
+
+  // 2. Fall back to token file's meshery-provider (~/.meshery/auth.json or auth.tokenPath)
+  const tokenPath = auth?.tokenPath ?? join(homedir(), ".meshery", "auth.json");
+  try {
+    const raw = await readFile(tokenPath, "utf8");
+    const data = JSON.parse(raw) as Record<string, unknown>;
+    const provider = data["meshery-provider"] ?? data["provider"];
+    if (typeof provider === "string" && provider.trim() !== "") {
+      return provider.trim();
+    }
+  } catch {
+    // Token file missing, unreadable, or invalid JSON
+  }
+
+  // 3. Fall back to server's /api/provider selection
+  try {
+    const res = await serverGetJson<Record<string, unknown> | string>({
+      path: API.provider,
+      anonymous: true,
+      ...(auth ? { auth } : {}),
+    });
+    if (typeof res === "string" && res.trim() !== "") {
+      return res.trim();
+    }
+    if (typeof res === "object" && res !== null) {
+      const serverProvider =
+        (res["provider"] as string | undefined) ??
+        (res["meshery-provider"] as string | undefined);
+      if (typeof serverProvider === "string" && serverProvider.trim() !== "") {
+        return serverProvider.trim();
+      }
+    }
+  } catch {
+    // Server unreachable or endpoint absent
+  }
+
+  // 4. Explicit fallback state rather than null
+  return "Unknown";
+}
+
 async function systemStatus(): Promise<string> {
   // mesheryctl system status has no --output-format; build structured status
   // from config + /api/system/version (never scrape tables).
@@ -63,13 +114,15 @@ async function systemStatus(): Promise<string> {
     status = auth ? "unreachable" : "unavailable";
   }
 
+  const provider = await resolveProvider(auth);
+
   const detail = renderDetail(
     "system_status",
     {
       status,
       version: version ?? null,
       platform: auth?.context.platform ?? null,
-      provider: auth?.context.provider ?? null,
+      provider,
       endpoint: auth?.context.endpoint ?? null,
     },
     statusSchema,

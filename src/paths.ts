@@ -6,4 +6,6 @@ export const API = {
   components: "api/registry/components",
   /** Unauthenticated version probe used for structured system status. */
   version: "api/system/version",
+  /** Active provider selection probe. */
+  provider: "api/provider",
 } as const;

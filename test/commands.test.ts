@@ -678,6 +678,39 @@ describe("system status/context", () => {
     expect(out).toMatch(/help\[\d+\]:/);
   });
 
+  it("status resolves provider and never renders raw null", async () => {
+    setServerAuth(fakeAuth);
+    setServerFetcher(async (url) => {
+      if (url.includes(API.version)) {
+        return jsonResponse({ build: "v1.0.71" });
+      }
+      if (url.includes(API.provider)) {
+        return jsonResponse({ provider: "Local" });
+      }
+      return jsonResponse({});
+    });
+    const out = await systemCommand(["status"]);
+    expect(out).toContain("system_status");
+    expect(out).toContain("provider:");
+    expect(out).not.toContain("provider: null");
+  });
+
+  it("status falls back to explicit state rather than raw null when provider cannot be determined", async () => {
+    setServerAuth(fakeAuth);
+    setServerFetcher(async (url) => {
+      if (url.includes(API.version)) {
+        return jsonResponse({ build: "v1.0.71" });
+      }
+      if (url.includes(API.provider)) {
+        throw new Error("provider endpoint unavailable");
+      }
+      return jsonResponse({});
+    });
+    const out = await systemCommand(["status"]);
+    expect(out).toContain("system_status");
+    expect(out).not.toContain("provider: null");
+  });
+
   it("context reads config auth (structured)", async () => {
     setServerAuth(fakeAuth);
     // system context uses loadMesheryAuth  -  inject via monkeypatch of files is hard;
