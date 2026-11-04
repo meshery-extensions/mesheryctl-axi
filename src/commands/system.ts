@@ -6,7 +6,7 @@ import { rejectUnknownFlags } from "../args.js";
 import { loadMesheryAuth, tryLoadMesheryAuth } from "../config.js";
 import { AxiError } from "../errors.js";
 import { API } from "../paths.js";
-import { serverGetJson } from "../server.js";
+import { getServerAuth, serverGetJson } from "../server.js";
 import { getSuggestions } from "../suggestions.js";
 import {
   field,
@@ -108,7 +108,7 @@ async function resolveProvider(
 async function systemStatus(): Promise<string> {
   // mesheryctl system status has no --output-format; build structured status
   // from config + /api/system/version (never scrape tables).
-  const auth = await tryLoadMesheryAuth();
+  const auth = getServerAuth() ?? (await tryLoadMesheryAuth());
   let version: string | undefined;
   let status = "unreachable";
   try {

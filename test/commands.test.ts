@@ -681,13 +681,47 @@ describe("system status/context", () => {
     expect(out).toMatch(/help\[\d+\]:/);
   });
 
-  it("status resolves provider and never renders raw null", async () => {
+  it("status resolves provider directly from token file (Issue #73 Local provider)", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "axi-"));
+    try {
+      const tokenPath = join(dir, "auth.json");
+      await writeFile(
+        tokenPath,
+        JSON.stringify({ "meshery-provider": "Local", token: "" }),
+      );
+      const { provider: _omit, ...ctx } = fakeAuth.context;
+      setServerAuth({ ...fakeAuth, tokenPath, context: ctx });
+
+      let providerEndpointCalled = false;
+      setServerFetcher(async (url) => {
+        if (url.includes(API.version)) {
+          return jsonResponse({ build: "v1.0.71" });
+        }
+        if (url.includes(API.provider)) {
+          providerEndpointCalled = true;
+          return jsonResponse({ provider: "Remote" });
+        }
+        return jsonResponse({});
+      });
+
+      const out = await systemCommand(["status"]);
+      expect(out).toContain("system_status");
+      expect(out).toContain("provider: Local");
+      expect(out).not.toContain("provider: null");
+      expect(providerEndpointCalled).toBe(false);
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("status falls back to server probe when token file has no provider", async () => {
     const dir = await mkdtemp(join(tmpdir(), "axi-"));
     try {
       const tokenPath = join(dir, "auth.json");
       await writeFile(tokenPath, JSON.stringify({ token: "" }));
       const { provider: _omit, ...ctx } = fakeAuth.context;
       setServerAuth({ ...fakeAuth, tokenPath, context: ctx });
+
       let providerCalled = false;
       setServerFetcher(async (url) => {
         if (url.includes(API.version)) {
@@ -699,6 +733,7 @@ describe("system status/context", () => {
         }
         return jsonResponse({});
       });
+
       const out = await systemCommand(["status"]);
       expect(out).toContain("system_status");
       expect(out).toContain("provider: Local");
@@ -716,6 +751,7 @@ describe("system status/context", () => {
       await writeFile(tokenPath, JSON.stringify({ token: "" }));
       const { provider: _omit, ...ctx } = fakeAuth.context;
       setServerAuth({ ...fakeAuth, tokenPath, context: ctx });
+
       let providerCalled = false;
       setServerFetcher(async (url) => {
         if (url.includes(API.version)) {
@@ -727,6 +763,7 @@ describe("system status/context", () => {
         }
         return jsonResponse({});
       });
+
       const out = await systemCommand(["status"]);
       expect(out).toContain("system_status");
       expect(out).toContain("provider: Unknown");
@@ -739,11 +776,6 @@ describe("system status/context", () => {
 
   it("context reads config auth (structured)", async () => {
     setServerAuth(fakeAuth);
-    // system context uses loadMesheryAuth  -  inject via monkeypatch of files is hard;
-    // instead we test through setServerAuth only for status. For context, stub by
-    // writing is not needed if we call with mocked load  -  use server auth path via
-    // temporarily setting env and a temp config in a dedicated test file.
-    // Here: ensure command rejects unknown flags and help works.
     await expect(systemCommand(["context", "--bogus"])).rejects.toMatchObject({
       code: "VALIDATION_ERROR",
     });
