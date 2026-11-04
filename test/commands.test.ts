@@ -666,6 +666,33 @@ describe("list commands use Server API (no --output-format spawn)", () => {
 });
 
 describe("system status/context", () => {
+  async function withTempConfig(
+    tokenContent: Record<string, unknown>,
+    fn: () => Promise<void>,
+  ): Promise<void> {
+    const dir = await mkdtemp(join(tmpdir(), "axi-"));
+    const prevEnv = process.env["MESHERY_CONFIG"];
+    try {
+      const tokenPath = join(dir, "auth.json");
+      const configPath = join(dir, "config.yaml");
+      await writeFile(tokenPath, JSON.stringify(tokenContent), "utf8");
+      await writeFile(
+        configPath,
+        `current-context: local\ncontexts:\n  local:\n    endpoint: http://localhost:9081\n    token: default\ntokens:\n  - name: default\n    location: ${JSON.stringify(tokenPath)}\n`,
+        "utf8",
+      );
+      process.env["MESHERY_CONFIG"] = configPath;
+      await fn();
+    } finally {
+      if (prevEnv !== undefined) {
+        process.env["MESHERY_CONFIG"] = prevEnv;
+      } else {
+        delete process.env["MESHERY_CONFIG"];
+      }
+      await rm(dir, { recursive: true, force: true });
+    }
+  }
+
   it("status probes /api/system/version without mesheryctl --output-format", async () => {
     setServerAuth(fakeAuth);
     setServerFetcher(async (url) => {
@@ -682,46 +709,32 @@ describe("system status/context", () => {
   });
 
   it("status resolves provider directly from token file (Issue #73 Local provider)", async () => {
-    const dir = await mkdtemp(join(tmpdir(), "axi-"));
-    try {
-      const tokenPath = join(dir, "auth.json");
-      await writeFile(
-        tokenPath,
-        JSON.stringify({ "meshery-provider": "Local", token: "" }),
-      );
-      const { provider: _omit, ...ctx } = fakeAuth.context;
-      setServerAuth({ ...fakeAuth, tokenPath, context: ctx });
+    await withTempConfig(
+      { "meshery-provider": "Local", token: "" },
+      async () => {
+        let providerEndpointCalled = false;
+        setServerFetcher(async (url) => {
+          if (url.includes(API.version)) {
+            return jsonResponse({ build: "v1.0.71" });
+          }
+          if (url.includes(API.provider)) {
+            providerEndpointCalled = true;
+            return jsonResponse({ provider: "Remote" });
+          }
+          return jsonResponse({});
+        });
 
-      let providerEndpointCalled = false;
-      setServerFetcher(async (url) => {
-        if (url.includes(API.version)) {
-          return jsonResponse({ build: "v1.0.71" });
-        }
-        if (url.includes(API.provider)) {
-          providerEndpointCalled = true;
-          return jsonResponse({ provider: "Remote" });
-        }
-        return jsonResponse({});
-      });
-
-      const out = await systemCommand(["status"]);
-      expect(out).toContain("system_status");
-      expect(out).toContain("provider: Local");
-      expect(out).not.toContain("provider: null");
-      expect(providerEndpointCalled).toBe(false);
-    } finally {
-      await rm(dir, { recursive: true, force: true });
-    }
+        const out = await systemCommand(["status"]);
+        expect(out).toContain("system_status");
+        expect(out).toContain("provider: Local");
+        expect(out).not.toContain("provider: null");
+        expect(providerEndpointCalled).toBe(false);
+      },
+    );
   });
 
   it("status falls back to server probe when token file has no provider", async () => {
-    const dir = await mkdtemp(join(tmpdir(), "axi-"));
-    try {
-      const tokenPath = join(dir, "auth.json");
-      await writeFile(tokenPath, JSON.stringify({ token: "" }));
-      const { provider: _omit, ...ctx } = fakeAuth.context;
-      setServerAuth({ ...fakeAuth, tokenPath, context: ctx });
-
+    await withTempConfig({ token: "valid-token" }, async () => {
       let providerCalled = false;
       setServerFetcher(async (url) => {
         if (url.includes(API.version)) {
@@ -739,19 +752,11 @@ describe("system status/context", () => {
       expect(out).toContain("provider: Local");
       expect(out).not.toContain("provider: null");
       expect(providerCalled).toBe(true);
-    } finally {
-      await rm(dir, { recursive: true, force: true });
-    }
+    });
   });
 
   it("status falls back to explicit state rather than raw null when provider cannot be determined", async () => {
-    const dir = await mkdtemp(join(tmpdir(), "axi-"));
-    try {
-      const tokenPath = join(dir, "auth.json");
-      await writeFile(tokenPath, JSON.stringify({ token: "" }));
-      const { provider: _omit, ...ctx } = fakeAuth.context;
-      setServerAuth({ ...fakeAuth, tokenPath, context: ctx });
-
+    await withTempConfig({ token: "valid-token" }, async () => {
       let providerCalled = false;
       setServerFetcher(async (url) => {
         if (url.includes(API.version)) {
@@ -769,9 +774,7 @@ describe("system status/context", () => {
       expect(out).toContain("provider: Unknown");
       expect(out).not.toContain("provider: null");
       expect(providerCalled).toBe(true);
-    } finally {
-      await rm(dir, { recursive: true, force: true });
-    }
+    });
   });
 
   it("context reads config auth (structured)", async () => {
