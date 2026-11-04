@@ -73,10 +73,9 @@ async function resolveProvider(
   try {
     const res = await Promise.race([
       serverGetJson<Record<string, unknown> | string>({
-        path: API.provider,
-        anonymous: true,
-        ...(auth ? { auth } : {}),
-      }),
+              path: API.provider,
+              ...(auth ? { auth } : { anonymous: true }),
+          }),
       new Promise<never>((_, reject) => {
         timer = setTimeout(
           () => reject(new Error("provider request timed out")),

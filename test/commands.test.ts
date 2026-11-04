@@ -733,15 +733,17 @@ describe("system status/context", () => {
     );
   });
 
-  it("status falls back to server probe when token file has no provider", async () => {
+  it("status falls back to server probe and forwards auth cookie when token file has no provider", async () => {
     await withTempConfig({ token: "valid-token" }, async () => {
       let providerCalled = false;
-      setServerFetcher(async (url) => {
+      let sentCookie: string | null = null;
+      setServerFetcher(async (url, init) => {
         if (url.includes(API.version)) {
           return jsonResponse({ build: "v1.0.71" });
         }
         if (url.includes(API.provider)) {
           providerCalled = true;
+          sentCookie = ((init?.headers as Record<string, string>) ?? {})["Cookie"] ?? null;
           return jsonResponse({ provider: "Local" });
         }
         return jsonResponse({});
@@ -752,6 +754,7 @@ describe("system status/context", () => {
       expect(out).toContain("provider: Local");
       expect(out).not.toContain("provider: null");
       expect(providerCalled).toBe(true);
+      expect(sentCookie).toContain("token=valid-token");
     });
   });
 
@@ -776,6 +779,27 @@ describe("system status/context", () => {
       expect(providerCalled).toBe(true);
     });
   });
+
+  it("status falls back to Unknown when provider request exceeds timeout", async () => {
+    await withTempConfig({ token: "valid-token" }, async () => {
+      setServerFetcher(async (url) => {
+        if (url.includes(API.version)) {
+          return jsonResponse({ build: "v1.0.71" });
+        }
+        if (url.includes(API.provider)) {
+          // Delay longer than 3000ms race timeout
+          await new Promise((resolve) => setTimeout(resolve, 3100));
+          return jsonResponse({ provider: "Local" });
+        }
+        return jsonResponse({});
+      });
+
+      const out = await systemCommand(["status"]);
+      expect(out).toContain("system_status");
+      expect(out).toContain("provider: Unknown");
+      expect(out).not.toContain("provider: null");
+    });
+  }, 10000);
 
   it("context reads config auth (structured)", async () => {
     setServerAuth(fakeAuth);
