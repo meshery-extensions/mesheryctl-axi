@@ -7,6 +7,9 @@ import { modelCommand } from "../src/commands/model.js";
 import { componentCommand } from "../src/commands/component.js";
 import { systemCommand } from "../src/commands/system.js";
 import { AxiError, mapMesheryctlError } from "../src/errors.js";
+import { mkdtemp, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { API } from "../src/paths.js";
 import type { ResolvedMesheryAuth } from "../src/config.js";
 
@@ -679,36 +682,59 @@ describe("system status/context", () => {
   });
 
   it("status resolves provider and never renders raw null", async () => {
-    setServerAuth(fakeAuth);
-    setServerFetcher(async (url) => {
-      if (url.includes(API.version)) {
-        return jsonResponse({ build: "v1.0.71" });
-      }
-      if (url.includes(API.provider)) {
-        return jsonResponse({ provider: "Local" });
-      }
-      return jsonResponse({});
-    });
-    const out = await systemCommand(["status"]);
-    expect(out).toContain("system_status");
-    expect(out).toContain("provider:");
-    expect(out).not.toContain("provider: null");
+    const dir = await mkdtemp(join(tmpdir(), "axi-"));
+    try {
+      const tokenPath = join(dir, "auth.json");
+      await writeFile(tokenPath, JSON.stringify({ token: "" }));
+      const { provider: _omit, ...ctx } = fakeAuth.context;
+      setServerAuth({ ...fakeAuth, tokenPath, context: ctx });
+      let providerCalled = false;
+      setServerFetcher(async (url) => {
+        if (url.includes(API.version)) {
+          return jsonResponse({ build: "v1.0.71" });
+        }
+        if (url.includes(API.provider)) {
+          providerCalled = true;
+          return jsonResponse({ provider: "Local" });
+        }
+        return jsonResponse({});
+      });
+      const out = await systemCommand(["status"]);
+      expect(out).toContain("system_status");
+      expect(out).toContain("provider: Local");
+      expect(out).not.toContain("provider: null");
+      expect(providerCalled).toBe(true);
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
   });
 
   it("status falls back to explicit state rather than raw null when provider cannot be determined", async () => {
-    setServerAuth(fakeAuth);
-    setServerFetcher(async (url) => {
-      if (url.includes(API.version)) {
-        return jsonResponse({ build: "v1.0.71" });
-      }
-      if (url.includes(API.provider)) {
-        throw new Error("provider endpoint unavailable");
-      }
-      return jsonResponse({});
-    });
-    const out = await systemCommand(["status"]);
-    expect(out).toContain("system_status");
-    expect(out).not.toContain("provider: null");
+    const dir = await mkdtemp(join(tmpdir(), "axi-"));
+    try {
+      const tokenPath = join(dir, "auth.json");
+      await writeFile(tokenPath, JSON.stringify({ token: "" }));
+      const { provider: _omit, ...ctx } = fakeAuth.context;
+      setServerAuth({ ...fakeAuth, tokenPath, context: ctx });
+      let providerCalled = false;
+      setServerFetcher(async (url) => {
+        if (url.includes(API.version)) {
+          return jsonResponse({ build: "v1.0.71" });
+        }
+        if (url.includes(API.provider)) {
+          providerCalled = true;
+          throw new Error("provider endpoint unavailable");
+        }
+        return jsonResponse({});
+      });
+      const out = await systemCommand(["status"]);
+      expect(out).toContain("system_status");
+      expect(out).toContain("provider: Unknown");
+      expect(out).not.toContain("provider: null");
+      expect(providerCalled).toBe(true);
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
   });
 
   it("context reads config auth (structured)", async () => {

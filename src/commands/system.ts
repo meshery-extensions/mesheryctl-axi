@@ -58,21 +58,32 @@ async function resolveProvider(
   try {
     const raw = await readFile(tokenPath, "utf8");
     const data = JSON.parse(raw) as Record<string, unknown>;
-    const provider = data["meshery-provider"] ?? data["provider"];
-    if (typeof provider === "string" && provider.trim() !== "") {
-      return provider.trim();
+    for (const key of ["meshery-provider", "provider"]) {
+      const value = data[key];
+      if (typeof value === "string" && value.trim() !== "") {
+        return value.trim();
+      }
     }
   } catch {
     // Token file missing, unreadable, or invalid JSON
   }
 
   // 3. Fall back to server's /api/provider selection
+  let timer: ReturnType<typeof setTimeout> | undefined;
   try {
-    const res = await serverGetJson<Record<string, unknown> | string>({
-      path: API.provider,
-      anonymous: true,
-      ...(auth ? { auth } : {}),
-    });
+    const res = await Promise.race([
+      serverGetJson<Record<string, unknown> | string>({
+        path: API.provider,
+        anonymous: true,
+        ...(auth ? { auth } : {}),
+      }),
+      new Promise<never>((_, reject) => {
+        timer = setTimeout(
+          () => reject(new Error("provider request timed out")),
+          3000,
+        );
+      }),
+    ]);
     if (typeof res === "string" && res.trim() !== "") {
       return res.trim();
     }
@@ -86,6 +97,8 @@ async function resolveProvider(
     }
   } catch {
     // Server unreachable or endpoint absent
+  } finally {
+    clearTimeout(timer);
   }
 
   // 4. Explicit fallback state rather than null
