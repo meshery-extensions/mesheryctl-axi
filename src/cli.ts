@@ -26,6 +26,7 @@ examples:
   mesheryctl-axi system status
   mesheryctl-axi design list
   mesheryctl-axi design content my-design --format yaml
+  mesheryctl-axi design import -f app.yaml -s manifest -n my-app
   mesheryctl-axi model content kubernetes --format json
   mesheryctl-axi component list
   mesheryctl-axi setup hooks
