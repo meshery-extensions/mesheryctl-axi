@@ -73,9 +73,9 @@ async function resolveProvider(
   try {
     const res = await Promise.race([
       serverGetJson<Record<string, unknown> | string>({
-              path: API.provider,
-              ...(auth ? { auth } : { anonymous: true }),
-          }),
+        path: API.provider,
+        ...(auth ? { auth } : { anonymous: true }),
+      }),
       new Promise<never>((_, reject) => {
         timer = setTimeout(
           () => reject(new Error("provider request timed out")),
@@ -172,16 +172,25 @@ export async function systemCommand(args: string[]): Promise<string> {
   }
   switch (sub) {
     case "status":
-      rejectUnknownFlags(args.slice(1), SYSTEM_FLAGS.status, "system", "status");
+      rejectUnknownFlags(
+        args.slice(1),
+        SYSTEM_FLAGS.status,
+        "system",
+        "status",
+      );
       return systemStatus();
     case "context":
-      rejectUnknownFlags(args.slice(1), SYSTEM_FLAGS.context, "system", "context");
+      rejectUnknownFlags(
+        args.slice(1),
+        SYSTEM_FLAGS.context,
+        "system",
+        "context",
+      );
       return systemContext();
     default:
-      throw new AxiError(
-        `Unknown subcommand: ${sub}`,
-        "VALIDATION_ERROR",
-        ["Available subcommands: status, context", "mesheryctl-axi system --help"],
-      );
+      throw new AxiError(`Unknown subcommand: ${sub}`, "VALIDATION_ERROR", [
+        "Available subcommands: status, context",
+        "mesheryctl-axi system --help",
+      ]);
   }
 }
