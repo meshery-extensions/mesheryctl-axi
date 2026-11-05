@@ -743,7 +743,8 @@ describe("system status/context", () => {
         }
         if (url.includes(API.provider)) {
           providerCalled = true;
-          sentCookie = ((init?.headers as Record<string, string>) ?? {})["Cookie"] ?? null;
+          sentCookie =
+            ((init?.headers as Record<string, string>) ?? {})["Cookie"] ?? null;
           return jsonResponse({ provider: "Local" });
         }
         return jsonResponse({});
