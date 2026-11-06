@@ -131,6 +131,17 @@ npx -y mesheryctl-axi model list
 npx -y mesheryctl-axi component list
 ```
 
+`design import` wraps `mesheryctl design import` and returns the new design's
+full ID (mesheryctl prints only its first 8 characters) and component count:
+
+```bash
+npx -y mesheryctl-axi design import -f app.yaml -s manifest -n my-app
+npx -y mesheryctl-axi design import -f https://example.com/chart.tgz -s helm
+```
+
+`-s` accepts `design`, `manifest`, `helm`, or `compose`. Without `-n`, the
+design is named after the file.
+
 A successful empty collection is definitive, for example `connections: 0`.
 Authentication, reachability, and server errors remain structured errors and
 must not be interpreted as empty results.
@@ -204,6 +215,25 @@ list, view, system, and error output as TOON; preserve `design content` and
 empty; an error or unavailable field does not.
 ```
 
+#### 5. Ambient discovery: Agent Skill and session hooks
+
+The npm package ships an Agent Skill at `skills/mesheryctl-axi/SKILL.md` for
+ambient discovery. Copy it into your agent's skills directory (for example
+`~/.claude/skills/mesheryctl-axi/SKILL.md`) so the agent reaches for the
+wrapper whenever a task touches Meshery. The skill is a short discovery stub:
+installed copies go stale, so all real guidance lives in the CLI itself.
+
+For session-start ambient context, run:
+
+```bash
+npx -y mesheryctl-axi setup hooks
+```
+
+This installs managed SessionStart hooks (Claude Code, Codex, OpenCode)
+using the same pattern as `gh-axi setup hooks`. Restart the agent session to
+receive the ambient context. Both the skill and the hooks point back at the
+content-first home from step 2 as the agent's first call.
+
 ## Contributing
 
 Contributions are welcome. Please read [CONTRIBUTING.md](CONTRIBUTING.md) and the [Code of Conduct](CODE_OF_CONDUCT.md), and sign off your commits ([DCO](https://docs.meshery.io/project/contributing#signing-off-on-commits-developer-certificate-of-origin)). New to Meshery? Start with the [Newcomers' Guide](https://layer5.io/community/newcomers) and say hello in the [community Slack](https://slack.meshery.io).
@@ -246,7 +276,7 @@ make dev ARGS="model content <name> --format json"
 mesheryctl-axi                        # home
 mesheryctl-axi connection list|view
 mesheryctl-axi system status|context
-mesheryctl-axi design list|view|content
+mesheryctl-axi design list|view|content|import
 mesheryctl-axi model list|view|content
 mesheryctl-axi component list|view
 ```
