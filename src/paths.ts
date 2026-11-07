@@ -6,4 +6,7 @@ export const API = {
   components: "api/registry/components",
   /** Unauthenticated version probe used for structured system status. */
   version: "api/system/version",
+  designDeploy: "api/pattern/deploy",
+  designEvaluate: "api/registry/relationships/evaluate",
+  k8sContexts: "api/system/kubernetes/contexts",
 } as const;
