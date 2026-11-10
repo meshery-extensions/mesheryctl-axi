@@ -6,9 +6,24 @@ export type ErrorCode =
   | "VALIDATION_ERROR"
   | "MESHERYCTL_NOT_INSTALLED"
   | "MESHERYCTL_INCOMPATIBLE"
+  | "PARTIAL_FAILURE"
   | "UNKNOWN";
 
 export { AxiError, exitCodeForError };
+
+/**
+ * A command that ran but did not fully succeed. `results` is its normal TOON
+ * output, printed ahead of the error so per-item outcomes are not lost.
+ */
+export class AxiPartialFailureError extends AxiError {
+  constructor(
+    message: string,
+    readonly results: string,
+    suggestions: string[] = [],
+  ) {
+    super(message, "PARTIAL_FAILURE", suggestions);
+  }
+}
 
 /** Minimum mesheryctl release this wrapper targets for view -o json paths. */
 export const REQUIRED_MESHERYCTL_HINT = "v1.0.69+";
