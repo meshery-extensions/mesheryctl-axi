@@ -467,12 +467,14 @@ function asRecord(value: unknown): Record<string, unknown> {
     : {};
 }
 
+/** NOT_FOUND for a design reference the server cannot resolve. */
 function designNotFound(ref: string): AxiError {
   return new AxiError(`Design not found: ${ref}`, "NOT_FOUND", [
     "mesheryctl-axi design list --fields id,name",
   ]);
 }
 
+/** A server design record as a resolved design, or NOT_FOUND when it has no content. */
 function toResolvedDesign(
   ref: string,
   item: Record<string, unknown>,
@@ -686,6 +688,17 @@ async function runDeployment(
     );
   }
   const contextFlag = flagValue(args, ["--context"], action);
+  // --dry-run is a bare boolean flag, like --full: the --dry-run=<value> form
+  // passes flag validation but hasFlag would read it as "not a dry run", so
+  // reject it here rather than silently running a real deploy.
+  const dryRunValue = args.find((arg) => arg.startsWith("--dry-run="));
+  if (dryRunValue) {
+    throw new AxiError(
+      `${dryRunValue} is invalid; --dry-run does not take a value`,
+      "VALIDATION_ERROR",
+      ["mesheryctl-axi design deploy <name|id> --dry-run"],
+    );
+  }
   const dryRun = action === "deploy" && hasFlag(args, "--dry-run");
 
   const design = await resolveDesign(ref);

@@ -336,6 +336,16 @@ describe("design deploy --dry-run", () => {
     expect(params?.get("verify")).toBe("true");
   });
 
+  it("rejects --dry-run=value without making a deploy call", async () => {
+    const calls = server({ deploy: dryRunOk });
+    for (const value of ["--dry-run=true", "--dry-run=false"]) {
+      const error = await failure(["deploy", "demo-app", value]);
+      expect(error.code).toBe("VALIDATION_ERROR");
+      expect(error.message).toContain("--dry-run does not take a value");
+    }
+    expect(deployCall(calls)).toBeUndefined();
+  });
+
   it("marks a component the server overwrote as unverified, not passed", async () => {
     server({ deploy: dryRunOk });
     const out = await designCommand(["deploy", "demo-app", "--dry-run"]);
