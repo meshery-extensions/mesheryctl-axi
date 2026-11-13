@@ -135,6 +135,20 @@ export async function serverRequestJson<T = unknown>(
     headers["Content-Type"] = "application/json";
   }
   if (!options.anonymous && auth) {
+    const target = new URL(url);
+    const host = target.hostname;
+    const loopback =
+      host === "localhost" ||
+      host === "localhost." ||
+      host === "[::1]" ||
+      /^127(?:\.\d{1,3}){3}$/.test(host);
+    if (target.protocol !== "https:" && !(target.protocol === "http:" && loopback)) {
+      throw new AxiError(
+        "Authenticated Meshery Server requests require HTTPS for non-loopback endpoints",
+        "VALIDATION_ERROR",
+        ["Configure an HTTPS endpoint in `mesheryctl system context`"],
+      );
+    }
     // Cookie names match mesheryctl pkg/utils AddAuthDetails.
     headers["Cookie"] =
       `token=${auth.tokenValue}; meshery-provider=${auth.providerValue}`;
