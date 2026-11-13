@@ -33,6 +33,25 @@ describe("list pagination metadata", () => {
     });
   });
 
+  it("uses the last value of repeated pagination flags", () => {
+    expect(listQueryFromFlags([
+      "--page=2", "--page", "4", "--pagesize", "5", "--pagesize=20",
+    ])).toEqual({
+      page: 3,
+      pagesize: 20,
+    });
+    expect(listQueryFromFlags(["--limit=5", "--limit", "15"])).toEqual({
+      page: 0,
+      pagesize: 15,
+    });
+    expect(listQueryFromFlags([
+      "--pagesize=20", "--limit=5", "--limit=30",
+    ])).toEqual({
+      page: 0,
+      pagesize: 20,
+    });
+  });
+
   it.each([
     ["--page", "2oops"],
     ["--page=0"],
@@ -47,6 +66,9 @@ describe("list pagination metadata", () => {
     ["--limit"],
     ["--pagesize=5", "--limit=abc"],
     ["--page=2", "--page=bad"],
+    ["--page=bad", "--page=2"],
+    ["--pagesize=bad", "--pagesize=5"],
+    ["--limit=bad", "--limit=5"],
   ])("rejects malformed pagination arguments %j", (...args) => {
     expect(() => listQueryFromFlags(args)).toThrowError(AxiError);
   });
