@@ -1,21 +1,17 @@
-import { runAxiCli } from "axi-sdk-js";
-import {
-  AxiError,
-  AxiPartialFailureError,
-  exitCodeForError,
-} from "./errors.js";
-import { renderError } from "./toon.js";
-import { VERSION } from "./version.js";
-import { homeCommand } from "./commands/home.js";
-import { connectionCommand, CONNECTION_HELP } from "./commands/connection.js";
-import { systemCommand, SYSTEM_HELP } from "./commands/system.js";
-import { designCommand, DESIGN_HELP } from "./commands/design.js";
-import { modelCommand, MODEL_HELP } from "./commands/model.js";
-import { componentCommand, COMPONENT_HELP } from "./commands/component.js";
-import { setupCommand, SETUP_HELP } from "./commands/setup.js";
+import { runAxiCli } from 'axi-sdk-js';
+import { COMPONENT_HELP, componentCommand } from './commands/component.js';
+import { CONNECTION_HELP, connectionCommand } from './commands/connection.js';
+import { DESIGN_HELP, designCommand } from './commands/design.js';
+import { homeCommand } from './commands/home.js';
+import { MODEL_HELP, modelCommand } from './commands/model.js';
+import { SETUP_HELP, setupCommand } from './commands/setup.js';
+import { SYSTEM_HELP, systemCommand } from './commands/system.js';
+import { AxiError, AxiPartialFailureError, exitCodeForError } from './errors.js';
+import { renderError } from './toon.js';
+import { VERSION } from './version.js';
 
 export const DESCRIPTION =
-  "Agent ergonomic wrapper around mesheryctl. Prefer this over raw mesheryctl for agent workflows. Requires mesheryctl installed and authenticated (MESHERYCTL_BIN to override).";
+  'Agent ergonomic wrapper around mesheryctl. Prefer this over raw mesheryctl for agent workflows. Requires mesheryctl installed and authenticated (MESHERYCTL_BIN to override).';
 
 export const TOP_HELP = `usage: mesheryctl-axi [command] [args] [flags]
 commands[6]:
@@ -46,7 +42,7 @@ const COMMAND_HELP: Record<string, string> = {
   setup: SETUP_HELP,
 };
 
-type CliStdout = Pick<NodeJS.WriteStream, "write">;
+type CliStdout = Pick<NodeJS.WriteStream, 'write'>;
 
 type MainOptions = {
   argv?: string[];
@@ -74,14 +70,8 @@ export async function main(options: MainOptions = {}): Promise<void> {
       const axiError =
         error instanceof AxiError
           ? error
-          : new AxiError(
-              error instanceof Error ? error.message : String(error),
-              "UNKNOWN",
-            );
-      const results =
-        axiError instanceof AxiPartialFailureError
-          ? `${axiError.results}\n`
-          : "";
+          : new AxiError(error instanceof Error ? error.message : String(error), 'UNKNOWN');
+      const results = axiError instanceof AxiPartialFailureError ? `${axiError.results}\n` : '';
       return {
         output: `${results}${renderError(axiError.message, axiError.code, axiError.suggestions)}\n`,
         exitCode: exitCodeForError(axiError),
