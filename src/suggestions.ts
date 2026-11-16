@@ -4,11 +4,27 @@ export type SuggestionContext = {
   isEmpty?: boolean;
   nextPage?: number;
   nextPageFlags?: readonly string[];
+  /** Concrete resource name or ID to put in suggestions instead of <name>. */
+  name?: string;
+  /** Kubernetes context the command targeted, kept in follow-up commands. */
+  context?: string;
 };
+
+/** Quote a value for a suggested shell command when it needs quoting. */
+export function suggestionValue(value: string): string {
+  return /^[A-Za-z0-9._:/-]+$/.test(value)
+    ? value
+    : `'${value.replaceAll("'", `'\\''`)}'`;
+}
 
 /** Contextual next-step suggestions for help[] on success. */
 export function getSuggestions(ctx: SuggestionContext): string[] {
   const { domain, action, isEmpty, nextPage, nextPageFlags = [] } = ctx;
+  const name = ctx.name === undefined ? "<name>" : suggestionValue(ctx.name);
+  const context =
+    ctx.context === undefined
+      ? ""
+      : ` --context ${suggestionValue(ctx.context)}`;
   const hints: string[] = [];
 
   if (domain === "home") {
@@ -42,6 +58,19 @@ export function getSuggestions(ctx: SuggestionContext): string[] {
       } else if (action === "view") {
         hints.push("mesheryctl-axi design content <name> --format yaml");
         hints.push("mesheryctl-axi design list");
+      } else if (action === "import") {
+        hints.push(`mesheryctl-axi design view ${name}`);
+        hints.push(`mesheryctl-axi design content ${name} --format yaml`);
+      } else if (action === "evaluate") {
+        hints.push(`mesheryctl-axi design deploy ${name} --dry-run${context}`);
+        hints.push(`mesheryctl-axi design content ${name} --format yaml`);
+      } else if (action === "dry-run") {
+        hints.push(`mesheryctl-axi design deploy ${name}${context}`);
+      } else if (action === "deploy") {
+        hints.push(`mesheryctl-axi design undeploy ${name}${context}`);
+        hints.push(`mesheryctl-axi design view ${name}`);
+      } else if (action === "undeploy") {
+        hints.push(`mesheryctl-axi design deploy ${name}${context}`);
       } else {
         hints.push("mesheryctl-axi design list");
       }

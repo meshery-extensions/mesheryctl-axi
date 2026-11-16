@@ -1,6 +1,6 @@
 import { componentViewArgv } from "./commands/component.js";
 import { connectionViewArgv } from "./commands/connection.js";
-import { designViewArgv } from "./commands/design.js";
+import { designImportArgv, designViewArgv } from "./commands/design.js";
 import { modelViewArgv } from "./commands/model.js";
 
 /**
@@ -31,7 +31,7 @@ function viewCase(
 /**
  * Every argv this package sends to the `mesheryctl` binary. Lists, status,
  * and context go through the Server API or local config instead (see #5), so
- * only `view` calls appear here. Add a case here whenever a command starts
+ * only `view` and `import` calls appear here. Add a case here whenever a command starts
  * spawning a new `mesheryctl` subcommand or flag.
  */
 export const MESHERYCTL_CONTRACT_CASES: MesheryctlContractCase[] = [
@@ -41,6 +41,12 @@ export const MESHERYCTL_CONTRACT_CASES: MesheryctlContractCase[] = [
     ["design", "view"],
     designViewArgv("<name>", "yaml"),
   ),
+  {
+    axi: "design import",
+    path: ["design", "import"],
+    flags: ["--file", "--source-type", "--name"],
+    argv: designImportArgv("<file|url>", "Kubernetes Manifest", "<name>"),
+  },
   viewCase("model view", ["model", "view"], modelViewArgv("<name>", "json")),
   viewCase(
     "model content",
