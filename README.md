@@ -142,6 +142,24 @@ npx -y mesheryctl-axi design import -f https://example.com/chart.tgz -s helm
 `-s` accepts `design`, `manifest`, `helm`, or `compose`. Without `-n`, the
 design is named after the file.
 
+`design evaluate`, `design deploy`, and `design undeploy` take a design name or
+ID and report through the Meshery Server API, because `mesheryctl` has no
+dry-run or context flag and prints evaluation actions only as text:
+
+```bash
+npx -y mesheryctl-axi design evaluate my-app
+npx -y mesheryctl-axi design deploy my-app --dry-run
+npx -y mesheryctl-axi design deploy my-app --context minikube
+npx -y mesheryctl-axi design undeploy my-app --context minikube
+```
+
+`--context` takes a Kubernetes context name, context ID, or connection ID, and
+may be omitted when only one cluster is connected. If any component fails, the
+per-component `results[]` are still printed, followed by a `PARTIAL_FAILURE`
+error and a non-zero exit. A dry run reports one result per component display
+name, so a component that shares its name with another is listed with
+`success: null` and counted as `unverified`, not as passed.
+
 A successful empty collection is definitive, for example `connections: 0`.
 Authentication, reachability, and server errors remain structured errors and
 must not be interpreted as empty results.
@@ -276,7 +294,7 @@ make dev ARGS="model content <name> --format json"
 mesheryctl-axi                        # home
 mesheryctl-axi connection list|view
 mesheryctl-axi system status|context
-mesheryctl-axi design list|view|content|import
+mesheryctl-axi design list|view|content|import|evaluate|deploy|undeploy
 mesheryctl-axi model list|view|content
 mesheryctl-axi component list|view
 ```
