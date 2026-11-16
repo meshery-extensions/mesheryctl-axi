@@ -121,6 +121,9 @@ List commands query the Meshery Server API using the endpoint and token from the
 active context. They do not scrape tables or pass unsupported JSON flags to
 `mesheryctl`:
 
+Authenticated API requests require HTTPS for remote endpoints. Plain HTTP is
+allowed for loopback endpoints such as `localhost`, `127.0.0.1`, and `[::1]`.
+
 ```bash
 npx -y mesheryctl-axi connection list
 npx -y mesheryctl-axi connection list --kind kubernetes --status connected
