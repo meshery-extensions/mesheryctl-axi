@@ -663,6 +663,172 @@ describe("list commands use Server API (no --output-format spawn)", () => {
     expect(out).toContain("count: 0");
     expect(out).toContain("components: 0");
   });
+
+  it("component list normalizes kind, model, and version from component definitions", async () => {
+    setServerAuth(fakeAuth);
+    setServerFetcher(async () =>
+      jsonResponse({
+        components: [
+          {
+            displayName: "Infisical Secret",
+            model: {
+              name: "infisical-operator",
+              version: "v1.0.0",
+              model: {
+                version: "v0.11.12",
+              },
+            },
+            component: {
+              kind: "InfisicalSecret",
+              version: "secrets.infisical.com/v1alpha1",
+            },
+          },
+        ],
+        total_count: 1,
+      }),
+    );
+    const out = await componentCommand(["list"]);
+    expect(out).toContain("count: 1");
+    expect(out).toContain("Infisical Secret");
+    expect(out).toContain("InfisicalSecret");
+    expect(out).toContain("infisical-operator");
+    expect(out).toContain("v0.11.12");
+    expect(out).not.toContain(",null,");
+  });
+
+  it("component list --full explicitly populates api_version in expanded output", async () => {
+    setServerAuth(fakeAuth);
+    setServerFetcher(async () =>
+      jsonResponse({
+        components: [
+          {
+            displayName: "Infisical Secret",
+            model: {
+              name: "infisical-operator",
+              version: "v1.0.0",
+              model: {
+                version: "v0.11.12",
+              },
+            },
+            component: {
+              kind: "InfisicalSecret",
+              version: "secrets.infisical.com/v1alpha1",
+            },
+          },
+        ],
+        total_count: 1,
+      }),
+    );
+    const out = await componentCommand(["list", "--full"]);
+    expect(out).toContain("count: 1");
+    expect(out).toContain(
+      "components[1]{name,kind,model,version,api_version}:",
+    );
+    expect(out).toContain(
+      "Infisical Secret,InfisicalSecret,infisical-operator,v0.11.12,secrets.infisical.com/v1alpha1",
+    );
+    expect(out).not.toContain(",null");
+  });
+
+  it("component list falls back to top-level kind, api_version, and version for legacy schemas", async () => {
+    setServerAuth(fakeAuth);
+    setServerFetcher(async () =>
+      jsonResponse({
+        components: [
+          {
+            name: "Pod",
+            kind: "Pod",
+            model: "kubernetes",
+            version: "v1.25.2",
+            apiVersion: "v1",
+          },
+        ],
+        total_count: 1,
+      }),
+    );
+    const out = await componentCommand(["list", "--full"]);
+    expect(out).toContain("count: 1");
+    expect(out).toContain(
+      "components[1]{name,kind,model,version,api_version}:",
+    );
+    expect(out).toContain("Pod,Pod,kubernetes,v1.25.2,v1");
+    expect(out).not.toContain(",null");
+  });
+});
+
+describe("component view", () => {
+  it("normalizes kind, api_version, and version with --full", async () => {
+    const rawComponent = JSON.stringify({
+      id: "fda1c4e7-14ae-4435-8236-adfb9cea0395",
+      schemaVersion: "components.meshery.io/v1beta1",
+      version: "v1.0.0",
+      displayName: "Infisical Secret",
+      model: {
+        name: "infisical-operator",
+        version: "v1.0.0",
+        model: {
+          version: "v0.11.12",
+        },
+      },
+      component: {
+        kind: "InfisicalSecret",
+        version: "secrets.infisical.com/v1alpha1",
+      },
+    });
+
+    setMesheryctlRunner(async (_bin, args) => {
+      expect(args).toEqual([
+        "component",
+        "view",
+        "Infisical Secret",
+        "--output-format",
+        "json",
+      ]);
+      return ok(rawComponent);
+    });
+
+    const out = await componentCommand(["view", "Infisical Secret", "--full"]);
+    expect(out).toContain("component:");
+    expect(out).toContain("name: Infisical Secret");
+    expect(out).toContain("kind: InfisicalSecret");
+    expect(out).toContain("model: infisical-operator");
+    expect(out).toContain("version: v0.11.12");
+    expect(out).toContain("api_version: secrets.infisical.com/v1alpha1");
+    expect(out).not.toContain("kind: null");
+    expect(out).not.toContain("api_version: null");
+  });
+
+  it("falls back to top-level kind, api_version, and version for legacy schemas", async () => {
+    const rawComponent = JSON.stringify({
+      id: "fda1c4e7-14ae-4435-8236-adfb9cea0395",
+      name: "Pod",
+      kind: "Pod",
+      model: "kubernetes",
+      version: "v1.25.2",
+      api_version: "v1",
+    });
+
+    setMesheryctlRunner(async (_bin, args) => {
+      expect(args).toEqual([
+        "component",
+        "view",
+        "Pod",
+        "--output-format",
+        "json",
+      ]);
+      return ok(rawComponent);
+    });
+
+    const out = await componentCommand(["view", "Pod", "--full"]);
+    expect(out).toContain("component:");
+    expect(out).toContain("name: Pod");
+    expect(out).toContain("kind: Pod");
+    expect(out).toContain("model: kubernetes");
+    expect(out).toContain("version: v1.25.2");
+    expect(out).toContain("api_version: v1");
+    expect(out).not.toContain("kind: null");
+    expect(out).not.toContain("api_version: null");
+  });
 });
 
 describe("system status/context", () => {
@@ -841,5 +1007,46 @@ describe("unknown flags non-zero path via commands", () => {
     await expect(componentCommand(["list", "--nope"])).rejects.toMatchObject({
       code: "VALIDATION_ERROR",
     });
+  });
+});
+
+describe("view and content positional arguments", () => {
+  const commands = [
+    ["design", "view", designCommand, "--fields", "name"],
+    ["design", "content", designCommand, "--format", "json"],
+    ["model", "view", modelCommand, "--fields", "name"],
+    ["model", "content", modelCommand, "--format", "json"],
+    ["component", "view", componentCommand, "--fields", "name"],
+    ["connection", "view", connectionCommand, "--fields", "name"],
+  ] as const;
+
+  it.each(commands)("%s %s rejects extra positionals before invoking mesheryctl", async (domain, sub, command, flag, value) => {
+    let invoked = false;
+    setMesheryctlRunner(async () => {
+      invoked = true;
+      return ok('{}');
+    });
+    for (const args of [
+      [sub, "Pod", "Liveness"],
+      [sub, flag, value, "Pod", "Liveness"],
+      [sub, "Pod", `${flag}=${value}`, "Liveness"],
+      [sub, "Pod", "--", "Liveness"],
+    ]) {
+      await expect(command(args)).rejects.toMatchObject({
+        code: "VALIDATION_ERROR",
+        suggestions: [expect.stringContaining(`mesheryctl-axi ${domain} ${sub} "Pod Liveness"`)],
+      });
+    }
+    expect(invoked).toBe(false);
+  });
+
+  it.each(commands)("%s %s accepts one quoted name with flag values", async (_domain, sub, command, flag, value) => {
+    let calledArgs: string[] = [];
+    setMesheryctlRunner(async (_bin, args) => {
+      calledArgs = args;
+      return ok('{"name":"Pod Liveness"}');
+    });
+    await command([sub, flag, value, "Pod Liveness"]);
+    expect(calledArgs).toContain("Pod Liveness");
   });
 });

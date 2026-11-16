@@ -1,4 +1,4 @@
-import { getPositional, rejectUnknownFlags } from "../args.js";
+import { getSinglePositional, rejectUnknownFlags } from "../args.js";
 import { AxiError } from "../errors.js";
 import { selectFields } from "../fields.js";
 import { asObject, mesheryctlJson } from "../mesheryctl.js";
@@ -65,27 +65,56 @@ function normalizeComponent(
   item: Record<string, unknown>,
 ): Record<string, unknown> {
   const model = item["model"];
-  const modelName =
+  const modelObj =
     typeof model === "object" && model !== null
-      ? ((model as Record<string, unknown>)["name"] ??
-        (model as Record<string, unknown>)["Name"])
+      ? (model as Record<string, unknown>)
+      : undefined;
+  const modelName =
+    modelObj !== undefined
+      ? (modelObj["name"] ?? modelObj["Name"])
       : model;
-  const component = item["component"];
+  const nestedModel =
+    typeof modelObj?.["model"] === "object" && modelObj?.["model"] !== null
+      ? (modelObj["model"] as Record<string, unknown>)
+      : undefined;
+  const modelReleaseVersion =
+    nestedModel?.["version"] ?? nestedModel?.["Version"];
+
+  const compObj =
+    typeof item["component"] === "object" && item["component"] !== null
+      ? (item["component"] as Record<string, unknown>)
+      : undefined;
+  const resourceVersion =
+    compObj?.["version"] ??
+    compObj?.["apiVersion"] ??
+    compObj?.["api_version"];
+
+  const kind =
+    compObj?.["kind"] ??
+    compObj?.["Kind"] ??
+    item["kind"] ??
+    item["Kind"];
+
+  const apiVersion =
+    resourceVersion ??
+    item["apiVersion"] ??
+    item["api_version"];
+
   const version =
-    item["version"] ??
-    (typeof component === "object" && component !== null
-      ? (component as Record<string, unknown>)["version"]
-      : undefined);
+    modelReleaseVersion ??
+    resourceVersion ??
+    item["version"];
+
   return {
     name:
       item["name"] ??
       item["displayName"] ??
       item["DisplayName"] ??
       item["Name"],
-    kind: item["kind"] ?? item["Kind"],
+    kind,
     model: modelName,
     version,
-    apiVersion: item["apiVersion"] ?? item["api_version"],
+    apiVersion,
   };
 }
 
@@ -122,7 +151,7 @@ async function listComponents(args: string[]): Promise<string> {
 
 async function viewComponent(args: string[]): Promise<string> {
   const schema = selectFields(args, viewSchema, viewSchema, "component view");
-  const name = getPositional(args, 0, ["--fields"]);
+  const name = getSinglePositional(args, ["--fields"], "component view");
   if (!name) {
     throw new AxiError(
       "Component name is required: mesheryctl-axi component view <name>",

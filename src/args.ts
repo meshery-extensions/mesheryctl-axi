@@ -80,6 +80,36 @@ export function getPositional(
   return undefined;
 }
 
+/** Get the sole positional argument, rejecting accidental unquoted names. */
+export function getSinglePositional(
+  args: string[],
+  valueFlags: readonly string[],
+  command: string,
+): string | undefined {
+  const positionals: string[] = [];
+  let afterSeparator = false;
+  for (let i = 0; i < args.length; i++) {
+    const arg = args[i];
+    if (!afterSeparator && arg === "--") {
+      afterSeparator = true;
+    } else if (!afterSeparator && valueFlags.includes(arg)) {
+      if (args[i + 1] !== undefined && !args[i + 1].startsWith("-")) i++;
+    } else if (!afterSeparator && arg.startsWith("-")) {
+      continue;
+    } else {
+      positionals.push(arg);
+    }
+  }
+  if (positionals.length > 1) {
+    throw new AxiError(
+      `mesheryctl-axi ${command} accepts at most one positional argument`,
+      "VALIDATION_ERROR",
+      [`Quote names containing spaces, e.g. mesheryctl-axi ${command} "Pod Liveness"`],
+    );
+  }
+  return positionals[0];
+}
+
 /**
  * Reject unknown flags. Positionals and --help/-h always pass; -- ends scanning.
  * Throws VALIDATION_ERROR with structured suggestions.
