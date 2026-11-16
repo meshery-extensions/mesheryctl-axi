@@ -1,5 +1,9 @@
 import { runAxiCli } from "axi-sdk-js";
-import { AxiError, exitCodeForError } from "./errors.js";
+import {
+  AxiError,
+  AxiPartialFailureError,
+  exitCodeForError,
+} from "./errors.js";
 import { renderError } from "./toon.js";
 import { VERSION } from "./version.js";
 import { homeCommand } from "./commands/home.js";
@@ -26,6 +30,8 @@ examples:
   mesheryctl-axi system status
   mesheryctl-axi design list
   mesheryctl-axi design content my-design --format yaml
+  mesheryctl-axi design import -f app.yaml -s manifest -n my-app
+  mesheryctl-axi design deploy my-design --dry-run
   mesheryctl-axi model content kubernetes --format json
   mesheryctl-axi component list
   mesheryctl-axi setup hooks
@@ -72,8 +78,12 @@ export async function main(options: MainOptions = {}): Promise<void> {
               error instanceof Error ? error.message : String(error),
               "UNKNOWN",
             );
+      const results =
+        axiError instanceof AxiPartialFailureError
+          ? `${axiError.results}\n`
+          : "";
       return {
-        output: `${renderError(axiError.message, axiError.code, axiError.suggestions)}\n`,
+        output: `${results}${renderError(axiError.message, axiError.code, axiError.suggestions)}\n`,
         exitCode: exitCodeForError(axiError),
       };
     },

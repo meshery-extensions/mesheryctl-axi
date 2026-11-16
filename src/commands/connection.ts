@@ -13,7 +13,7 @@ import {
   nextPage,
   serverGetJson,
 } from "../server.js";
-import { getSuggestions } from "../suggestions.js";
+import { getSuggestions, suggestionValue } from "../suggestions.js";
 import {
   emptyState,
   field,
@@ -92,12 +92,6 @@ function normalizeConnection(
     created_at: item["created_at"] ?? item["createdAt"],
     updated_at: item["updated_at"] ?? item["updatedAt"],
   };
-}
-
-function suggestionValue(value: string): string {
-  return /^[A-Za-z0-9._:/-]+$/.test(value)
-    ? value
-    : `'${value.replaceAll("'", `'\\''`)}'`;
 }
 
 async function listConnections(args: string[]): Promise<string> {
