@@ -1,4 +1,4 @@
-import { getPositional, rejectUnknownFlags } from "../args.js";
+import { getSinglePositional, rejectUnknownFlags } from "../args.js";
 import { AxiError } from "../errors.js";
 import { selectFields } from "../fields.js";
 import { asObject, mesheryctlJson } from "../mesheryctl.js";
@@ -122,7 +122,7 @@ async function listComponents(args: string[]): Promise<string> {
 
 async function viewComponent(args: string[]): Promise<string> {
   const schema = selectFields(args, viewSchema, viewSchema, "component view");
-  const name = getPositional(args, 0, ["--fields"]);
+  const name = getSinglePositional(args, ["--fields"], "component view");
   if (!name) {
     throw new AxiError(
       "Component name is required: mesheryctl-axi component view <name>",
