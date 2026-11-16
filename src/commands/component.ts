@@ -1,4 +1,4 @@
-import { getFlag, getPositional, rejectUnknownFlags } from "../args.js";
+import { getPositional, rejectUnknownFlags } from "../args.js";
 import { AxiError } from "../errors.js";
 import { selectFields } from "../fields.js";
 import { asObject, mesheryctlJson } from "../mesheryctl.js";
@@ -91,10 +91,7 @@ function normalizeComponent(
 
 async function listComponents(args: string[]): Promise<string> {
   const schema = selectFields(args, listSchema, viewSchema, "component list");
-  const q = listQueryFromFlags({
-    page: getFlag(args, "--page"),
-    pagesize: getFlag(args, "--pagesize") ?? getFlag(args, "--limit"),
-  });
+  const q = listQueryFromFlags(args);
   const payload = await serverGetJson<Record<string, unknown>>({
     path: API.components,
     query: { page: q.page, pagesize: q.pagesize },
