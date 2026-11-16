@@ -89,8 +89,10 @@ export function rejectUnknownFlags(
   known: readonly string[],
   command: string,
   sub: string,
+  valueFlags: readonly string[] = [],
 ): void {
   const knownSet = new Set(known);
+  const valueSet = new Set(valueFlags);
   const unknown: string[] = [];
   for (let i = 0; i < args.length; i++) {
     const tok = args[i];
@@ -98,7 +100,11 @@ export function rejectUnknownFlags(
     if (!tok.startsWith("-")) continue;
     const name = tok.split("=", 1)[0];
     if (name === "--help" || name === "-h") continue;
-    if (knownSet.has(name)) continue;
+    if (knownSet.has(name)) {
+      // The next token is this flag's operand (e.g. `-n -draft`), not a flag.
+      if (tok === name && valueSet.has(name)) i++;
+      continue;
+    }
     if (!unknown.includes(name)) unknown.push(name);
   }
   if (unknown.length === 0) return;
