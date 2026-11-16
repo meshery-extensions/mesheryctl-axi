@@ -82,3 +82,67 @@ describe("config + system context", () => {
     expect(out).toMatch(/help\[\d+\]:/);
   });
 });
+
+/** Writes a config.yaml pointing at an auth.json with the given contents. */
+async function writeConfigWithToken(tokenFile: object): Promise<string> {
+  const dir = await mkdtemp(join(tmpdir(), "mesheryctl-axi-"));
+  const tokenPath = join(dir, "auth.json");
+  const configPath = join(dir, "config.yaml");
+  await writeFile(tokenPath, JSON.stringify(tokenFile));
+  await writeFile(
+    configPath,
+    [
+      "current-context: local",
+      "contexts:",
+      "  local:",
+      "    endpoint: http://127.0.0.1:9081",
+      "    token: default",
+      "tokens:",
+      "  - name: default",
+      `    location: ${tokenPath}`,
+      "",
+    ].join("\n"),
+  );
+  return configPath;
+}
+
+describe("loadMesheryAuth token requirements", () => {
+  // mesheryctl writes an empty token for the Local provider; "None" is the
+  // legacy name Meshery Server still accepts, matched case-insensitively.
+  it.each(["Local", "None", "local", "NONE"])(
+    "accepts an empty token for the %s provider",
+    async (provider) => {
+      const configPath = await writeConfigWithToken({
+        token: "",
+        "meshery-provider": provider,
+      });
+
+      const auth = await loadMesheryAuth(configPath);
+      expect(auth.tokenValue).toBe("");
+      expect(auth.providerValue).toBe(provider);
+    },
+  );
+
+  it.each([
+    ["an empty token", { token: "", "meshery-provider": "Meshery" }],
+    ["no token field", { "meshery-provider": "Meshery" }],
+    ["no provider and an empty token", { token: "" }],
+  ])("rejects a remote provider with %s", async (_label, tokenFile) => {
+    const configPath = await writeConfigWithToken(tokenFile);
+
+    await expect(loadMesheryAuth(configPath)).rejects.toMatchObject({
+      code: "AUTH_REQUIRED",
+    });
+  });
+
+  it("keeps a non-empty token for the Local provider", async () => {
+    const configPath = await writeConfigWithToken({
+      token: "abc",
+      "meshery-provider": "Local",
+    });
+
+    const auth = await loadMesheryAuth(configPath);
+    expect(auth.tokenValue).toBe("abc");
+    expect(auth.providerValue).toBe("Local");
+  });
+});

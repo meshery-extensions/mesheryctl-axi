@@ -43,6 +43,16 @@ type RawConfig = {
   tokens?: Array<{ name?: string; location?: string }>;
 };
 
+/**
+ * Meshery Server treats "Local" and its legacy alias "None" as the built-in
+ * local provider, case-insensitively (NormalizeProviderName in
+ * meshery/meshery server/models/providers.go).
+ */
+function isLocalProvider(provider: string): boolean {
+  const name = provider.toLowerCase();
+  return name === "local" || name === "none";
+}
+
 /** Override with MESHERY_CONFIG / MESHERYCTL_CONFIG. Default: ~/.meshery/config.yaml */
 export function resolveMesheryConfigPath(): string {
   const fromEnv =
@@ -118,7 +128,9 @@ export async function loadMesheryAuth(
   }
 
   const tokenValue = tokenObj.token ?? "";
-  if (!tokenValue) {
+  const providerValue = tokenObj["meshery-provider"] ?? "Meshery";
+  // The Local provider needs no token; mesheryctl writes an empty one for it.
+  if (!tokenValue && !isLocalProvider(providerValue)) {
     throw new AxiError(
       `Token file ${tokenPath} has no token field`,
       "AUTH_REQUIRED",
@@ -130,7 +142,7 @@ export async function loadMesheryAuth(
     configPath,
     tokenPath,
     tokenValue,
-    providerValue: tokenObj["meshery-provider"] ?? "Meshery",
+    providerValue,
     context: {
       name: current,
       endpoint,

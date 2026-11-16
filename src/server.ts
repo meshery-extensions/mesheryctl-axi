@@ -6,7 +6,15 @@ export type ServerGetOptions = {
   query?: Record<string, string | number | readonly string[] | undefined>;
   /** Skip auth cookies (e.g. /api/system/version). */
   anonymous?: boolean;
+  /** Extra HTTP statuses this endpoint uses for a missing resource. */
+  notFoundStatuses?: readonly number[];
   auth?: ResolvedMesheryAuth;
+};
+
+export type ServerRequestOptions = ServerGetOptions & {
+  method?: "GET" | "POST" | "DELETE";
+  /** Sent as JSON. */
+  body?: unknown;
 };
 
 export type ServerFetcher = (
@@ -79,12 +87,32 @@ export function nextPage(
 }
 
 /**
- * GET JSON from Meshery Server using the same cookie auth mesheryctl uses.
- * List paths use this interim bridge until mesheryctl lists support -o json
- * (meshery/meshery#21893).
+ * Readable text for a failed request. Meshery reports failures as a MeshKit
+ * JSON error whose useful reason is in longDescription, so prefer that over
+ * the raw body.
  */
-export async function serverGetJson<T = unknown>(
-  options: ServerGetOptions,
+function serverErrorDetail(body: string): string {
+  try {
+    const parsed = JSON.parse(body) as Record<string, unknown>;
+    const summary = typeof parsed["error"] === "string" ? parsed["error"] : "";
+    const detail = Array.isArray(parsed["longDescription"])
+      ? parsed["longDescription"].filter(Boolean).join("; ")
+      : "";
+    const text = [summary, detail].filter(Boolean).join(": ");
+    if (text) return text;
+  } catch {
+    // Not JSON; fall through to the raw body.
+  }
+  return body.slice(0, 200);
+}
+
+/**
+ * Call Meshery Server and parse its JSON reply, using the same cookie auth
+ * mesheryctl uses. Commands use this interim bridge where mesheryctl cannot
+ * give structured output or lacks a flag (e.g. meshery/meshery#21893).
+ */
+export async function serverRequestJson<T = unknown>(
+  options: ServerRequestOptions,
 ): Promise<T> {
   const auth =
     options.auth ??
@@ -103,6 +131,9 @@ export async function serverGetJson<T = unknown>(
   const headers: Record<string, string> = {
     Accept: "application/json",
   };
+  if (options.body !== undefined) {
+    headers["Content-Type"] = "application/json";
+  }
   if (!options.anonymous && auth) {
     // Cookie names match mesheryctl pkg/utils AddAuthDetails.
     headers["Cookie"] =
@@ -112,7 +143,13 @@ export async function serverGetJson<T = unknown>(
   const fetchImpl = fetcherOverride ?? fetch;
   let res: Response;
   try {
-    res = await fetchImpl(url, { method: "GET", headers });
+    res = await fetchImpl(url, {
+      method: options.method ?? "GET",
+      headers,
+      ...(options.body !== undefined
+        ? { body: JSON.stringify(options.body) }
+        : {}),
+    });
   } catch (e) {
     throw new AxiError(
       `Unable to reach Meshery Server at ${endpoint}: ${e instanceof Error ? e.message : String(e)}`,
@@ -131,13 +168,13 @@ export async function serverGetJson<T = unknown>(
       ["Run `mesheryctl system login` (or provider login) and retry"],
     );
   }
-  if (res.status === 404) {
+  if (res.status === 404 || options.notFoundStatuses?.includes(res.status)) {
     throw new AxiError(`Resource not found at ${options.path}`, "NOT_FOUND");
   }
   if (!res.ok) {
-    const body = (await res.text()).slice(0, 200);
+    const detail = serverErrorDetail(await res.text());
     throw new AxiError(
-      `Meshery Server error HTTP ${res.status}: ${body || res.statusText}`,
+      `Meshery Server error HTTP ${res.status}: ${detail || res.statusText}`,
       "UNKNOWN",
     );
   }
@@ -156,24 +193,47 @@ export async function serverGetJson<T = unknown>(
   }
 }
 
-/**
- * Convert 1-based user --page to mesheryctl's zero-based API page.
- * Defaults to page 0 / pagesize 10 when unset (mesheryctl display defaults).
- */
-export function listQueryFromFlags(args: {
-  page?: string;
-  pagesize?: string;
-}): { page: number; pagesize: number } {
-  const pageOneBased = args.page ? Number.parseInt(args.page, 10) : 1;
-  const pagesize = args.pagesize ? Number.parseInt(args.pagesize, 10) : 10;
-  const page = Number.isFinite(pageOneBased)
-    ? Math.max(0, pageOneBased - 1)
-    : 0;
+/** GET JSON from Meshery Server. See {@link serverRequestJson}. */
+export function serverGetJson<T = unknown>(
+  options: ServerGetOptions,
+): Promise<T> {
+  return serverRequestJson<T>(options);
+}
+
+function positiveIntegerFlag(args: string[], name: string): number | undefined {
+  let first: number | undefined;
+  for (let i = 0; i < args.length; i++) {
+    const arg = args[i];
+    if (arg !== name && !arg.startsWith(`${name}=`)) continue;
+
+    const value = arg === name ? args[i + 1] : arg.slice(name.length + 1);
+    if (arg === name && value !== undefined && !value.startsWith("-")) i++;
+    const number = value && /^\d+$/.test(value) ? Number(value) : NaN;
+    if (!Number.isSafeInteger(number) || number <= 0) {
+      throw new AxiError(
+        `${name} requires a positive whole number`,
+        "VALIDATION_ERROR",
+        [`Use ${name} <positive-integer>`],
+      );
+    }
+    first ??= number;
+  }
+  return first;
+}
+
+/** Convert 1-based --page to the Server API's zero-based page. */
+export function listQueryFromFlags(args: string[]): {
+  page: number;
+  pagesize: number;
+} {
+  const pageOneBased = positiveIntegerFlag(args, "--page") ?? 1;
+  const requestedPageSize = positiveIntegerFlag(args, "--pagesize");
+  const requestedLimit = positiveIntegerFlag(args, "--limit");
+  const pagesize = requestedPageSize ?? requestedLimit ?? 10;
   return {
-    page,
+    page: pageOneBased - 1,
     // Meshery Server caps pageSize at 100; mirror that so next-page detection
     // uses the page size the server actually applied.
-    pagesize:
-      Number.isFinite(pagesize) && pagesize > 0 ? Math.min(pagesize, 100) : 10,
+    pagesize: Math.min(pagesize, 100),
   };
 }

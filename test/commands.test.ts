@@ -7,6 +7,9 @@ import { modelCommand } from "../src/commands/model.js";
 import { componentCommand } from "../src/commands/component.js";
 import { systemCommand } from "../src/commands/system.js";
 import { AxiError, mapMesheryctlError } from "../src/errors.js";
+import { mkdtemp, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { API } from "../src/paths.js";
 import type { ResolvedMesheryAuth } from "../src/config.js";
 
@@ -309,6 +312,32 @@ describe("connection list via Server API", () => {
   });
 });
 
+describe("list pagination validation", () => {
+  it.each([
+    ["connection", connectionCommand],
+    ["design", designCommand],
+    ["model", modelCommand],
+    ["component", componentCommand],
+  ] as const)(
+    "rejects invalid %s pagination before fetching",
+    async (_name, command) => {
+      let fetched = false;
+      setServerFetcher(async () => {
+        fetched = true;
+        return jsonResponse({});
+      });
+
+      await expect(command(["list", "--page", "2oops"])).rejects.toMatchObject({
+        code: "VALIDATION_ERROR",
+      });
+      await expect(command(["list", "--pagesize="])).rejects.toMatchObject({
+        code: "VALIDATION_ERROR",
+      });
+      expect(fetched).toBe(false);
+    },
+  );
+});
+
 describe("design content is never TOON", () => {
   it("returns YAML content verbatim with exact argv", async () => {
     const yaml =
@@ -403,6 +432,227 @@ describe("list commands use Server API (no --output-format spawn)", () => {
     expect(out).toContain("models: 0");
   });
 
+  it("model list reports the installed release version instead of the definition schema version", async () => {
+    setServerAuth(fakeAuth);
+    setServerFetcher(async () =>
+      jsonResponse({
+        models: [
+          {
+            name: "infisical-operator",
+            version: "v1.0.0",
+            model: { version: "v0.11.12" },
+          },
+        ],
+        totalCount: 1,
+      }),
+    );
+
+    const out = await modelCommand(["list", "--fields", "name,version"]);
+    expect(out).toContain("models[1]{name,version}");
+    expect(out).toContain("infisical-operator,v0.11.12");
+    expect(out).not.toContain("infisical-operator,v1.0.0");
+  });
+
+  it.each(["", "   "])(
+    "model list falls back to the definition schema version when the release version is blank",
+    async (releaseVersion) => {
+      setServerAuth(fakeAuth);
+      setServerFetcher(async () =>
+        jsonResponse({
+          models: [
+            {
+              name: "infisical-operator",
+              version: "v1.0.0",
+              model: { version: releaseVersion },
+            },
+          ],
+          totalCount: 1,
+        }),
+      );
+
+      const out = await modelCommand(["list", "--fields", "name,version"]);
+      expect(out).toContain("infisical-operator,v1.0.0");
+    },
+  );
+
+  it("model list uses a usable legacy-cased release version when version is blank", async () => {
+    setServerAuth(fakeAuth);
+    setServerFetcher(async () =>
+      jsonResponse({
+        models: [
+          {
+            name: "infisical-operator",
+            version: "v1.0.0",
+            model: { version: "", Version: " v0.11.12 " },
+          },
+        ],
+        totalCount: 1,
+      }),
+    );
+
+    const out = await modelCommand(["list", "--fields", "name,version"]);
+    expect(out).toContain("infisical-operator,v0.11.12");
+    expect(out).not.toContain("infisical-operator,v1.0.0");
+  });
+
+  it("model list trims a padded release version", async () => {
+    setServerAuth(fakeAuth);
+    setServerFetcher(async () =>
+      jsonResponse({
+        models: [
+          {
+            name: "infisical-operator",
+            version: "v1.0.0",
+            model: { version: " v0.11.12 " },
+          },
+        ],
+        totalCount: 1,
+      }),
+    );
+
+    const out = await modelCommand(["list", "--fields", "name,version"]);
+    expect(out).toContain("infisical-operator,v0.11.12");
+  });
+
+  it("model list falls back to the definition schema version for a non-string release version", async () => {
+    setServerAuth(fakeAuth);
+    setServerFetcher(async () =>
+      jsonResponse({
+        models: [
+          {
+            name: "infisical-operator",
+            version: "v1.0.0",
+            model: { version: 11 },
+          },
+        ],
+        totalCount: 1,
+      }),
+    );
+
+    const out = await modelCommand(["list", "--fields", "name,version"]);
+    expect(out).toContain("infisical-operator,v1.0.0");
+  });
+
+  it("model view reports the installed release version instead of the definition schema version", async () => {
+    setMesheryctlRunner(async (_bin, args) => {
+      expect(args).toEqual([
+        "model",
+        "view",
+        "infisical-operator",
+        "--output-format",
+        "json",
+      ]);
+      return ok(
+        JSON.stringify({
+          name: "infisical-operator",
+          version: "v1.0.0",
+          model: { version: "v0.11.12" },
+        }),
+      );
+    });
+
+    const out = await modelCommand([
+      "view",
+      "infisical-operator",
+      "--fields",
+      "name,version",
+    ]);
+    expect(out).toContain("name: infisical-operator");
+    expect(out).toContain("version: v0.11.12");
+    expect(out).not.toContain("version: v1.0.0");
+  });
+
+  it.each(["", "   "])(
+    "model view falls back to the definition schema version when the release version is blank",
+    async (releaseVersion) => {
+      setMesheryctlRunner(async (_bin, args) => {
+        expect(args).toEqual([
+          "model",
+          "view",
+          "infisical-operator",
+          "--output-format",
+          "json",
+        ]);
+        return ok(
+          JSON.stringify({
+            name: "infisical-operator",
+            version: "v1.0.0",
+            model: { version: releaseVersion },
+          }),
+        );
+      });
+
+      const out = await modelCommand([
+        "view",
+        "infisical-operator",
+        "--fields",
+        "name,version",
+      ]);
+      expect(out).toContain("version: v1.0.0");
+    },
+  );
+
+  it("model view uses a usable legacy-cased release version when version is blank", async () => {
+    setMesheryctlRunner(async () =>
+      ok(
+        JSON.stringify({
+          name: "infisical-operator",
+          version: "v1.0.0",
+          model: { version: "   ", Version: " v0.11.12 " },
+        }),
+      ),
+    );
+
+    const out = await modelCommand([
+      "view",
+      "infisical-operator",
+      "--fields",
+      "name,version",
+    ]);
+    expect(out).toContain("version: v0.11.12");
+    expect(out).not.toContain("version: v1.0.0");
+  });
+
+  it("model view trims a padded release version", async () => {
+    setMesheryctlRunner(async () =>
+      ok(
+        JSON.stringify({
+          name: "infisical-operator",
+          version: "v1.0.0",
+          model: { version: " v0.11.12 " },
+        }),
+      ),
+    );
+
+    const out = await modelCommand([
+      "view",
+      "infisical-operator",
+      "--fields",
+      "name,version",
+    ]);
+    expect(out).toContain("version: v0.11.12");
+  });
+
+  it("model view falls back to the definition schema version for a non-string release version", async () => {
+    setMesheryctlRunner(async () =>
+      ok(
+        JSON.stringify({
+          name: "infisical-operator",
+          version: "v1.0.0",
+          model: { version: 11 },
+        }),
+      ),
+    );
+
+    const out = await modelCommand([
+      "view",
+      "infisical-operator",
+      "--fields",
+      "name,version",
+    ]);
+    expect(out).toContain("version: v1.0.0");
+  });
+
   it("component list", async () => {
     setServerAuth(fakeAuth);
     setServerFetcher(async (url) => {
@@ -416,6 +666,33 @@ describe("list commands use Server API (no --output-format spawn)", () => {
 });
 
 describe("system status/context", () => {
+  async function withTempConfig(
+    tokenContent: Record<string, unknown>,
+    fn: () => Promise<void>,
+  ): Promise<void> {
+    const dir = await mkdtemp(join(tmpdir(), "axi-"));
+    const prevEnv = process.env["MESHERY_CONFIG"];
+    try {
+      const tokenPath = join(dir, "auth.json");
+      const configPath = join(dir, "config.yaml");
+      await writeFile(tokenPath, JSON.stringify(tokenContent), "utf8");
+      await writeFile(
+        configPath,
+        `current-context: local\ncontexts:\n  local:\n    endpoint: http://localhost:9081\n    token: default\ntokens:\n  - name: default\n    location: ${JSON.stringify(tokenPath)}\n`,
+        "utf8",
+      );
+      process.env["MESHERY_CONFIG"] = configPath;
+      await fn();
+    } finally {
+      if (prevEnv !== undefined) {
+        process.env["MESHERY_CONFIG"] = prevEnv;
+      } else {
+        delete process.env["MESHERY_CONFIG"];
+      }
+      await rm(dir, { recursive: true, force: true });
+    }
+  }
+
   it("status probes /api/system/version without mesheryctl --output-format", async () => {
     setServerAuth(fakeAuth);
     setServerFetcher(async (url) => {
@@ -431,13 +708,102 @@ describe("system status/context", () => {
     expect(out).toMatch(/help\[\d+\]:/);
   });
 
+  it("status resolves provider directly from token file (Issue #73 Local provider)", async () => {
+    await withTempConfig(
+      { "meshery-provider": "Local", token: "" },
+      async () => {
+        let providerEndpointCalled = false;
+        setServerFetcher(async (url) => {
+          if (url.includes(API.version)) {
+            return jsonResponse({ build: "v1.0.71" });
+          }
+          if (url.includes(API.provider)) {
+            providerEndpointCalled = true;
+            return jsonResponse({ provider: "Remote" });
+          }
+          return jsonResponse({});
+        });
+
+        const out = await systemCommand(["status"]);
+        expect(out).toContain("system_status");
+        expect(out).toContain("provider: Local");
+        expect(out).not.toContain("provider: null");
+        expect(providerEndpointCalled).toBe(false);
+      },
+    );
+  });
+
+  it("status falls back to server probe and forwards auth cookie when token file has no provider", async () => {
+    await withTempConfig({ token: "valid-token" }, async () => {
+      let providerCalled = false;
+      let sentCookie: string | null = null;
+      setServerFetcher(async (url, init) => {
+        if (url.includes(API.version)) {
+          return jsonResponse({ build: "v1.0.71" });
+        }
+        if (url.includes(API.provider)) {
+          providerCalled = true;
+          sentCookie =
+            ((init?.headers as Record<string, string>) ?? {})["Cookie"] ?? null;
+          return jsonResponse({ provider: "Local" });
+        }
+        return jsonResponse({});
+      });
+
+      const out = await systemCommand(["status"]);
+      expect(out).toContain("system_status");
+      expect(out).toContain("provider: Local");
+      expect(out).not.toContain("provider: null");
+      expect(providerCalled).toBe(true);
+      expect(sentCookie).toContain("token=valid-token");
+    });
+  });
+
+  it("status falls back to explicit state rather than raw null when provider cannot be determined", async () => {
+    await withTempConfig({ token: "valid-token" }, async () => {
+      let providerCalled = false;
+      setServerFetcher(async (url) => {
+        if (url.includes(API.version)) {
+          return jsonResponse({ build: "v1.0.71" });
+        }
+        if (url.includes(API.provider)) {
+          providerCalled = true;
+          throw new Error("provider endpoint unavailable");
+        }
+        return jsonResponse({});
+      });
+
+      const out = await systemCommand(["status"]);
+      expect(out).toContain("system_status");
+      expect(out).toContain("provider: Unknown");
+      expect(out).not.toContain("provider: null");
+      expect(providerCalled).toBe(true);
+    });
+  });
+
+  it("status falls back to Unknown when provider request exceeds timeout", async () => {
+    await withTempConfig({ token: "valid-token" }, async () => {
+      setServerFetcher(async (url) => {
+        if (url.includes(API.version)) {
+          return jsonResponse({ build: "v1.0.71" });
+        }
+        if (url.includes(API.provider)) {
+          // Delay longer than 3000ms race timeout
+          await new Promise((resolve) => setTimeout(resolve, 3100));
+          return jsonResponse({ provider: "Local" });
+        }
+        return jsonResponse({});
+      });
+
+      const out = await systemCommand(["status"]);
+      expect(out).toContain("system_status");
+      expect(out).toContain("provider: Unknown");
+      expect(out).not.toContain("provider: null");
+    });
+  }, 10000);
+
   it("context reads config auth (structured)", async () => {
     setServerAuth(fakeAuth);
-    // system context uses loadMesheryAuth  -  inject via monkeypatch of files is hard;
-    // instead we test through setServerAuth only for status. For context, stub by
-    // writing is not needed if we call with mocked load  -  use server auth path via
-    // temporarily setting env and a temp config in a dedicated test file.
-    // Here: ensure command rejects unknown flags and help works.
     await expect(systemCommand(["context", "--bogus"])).rejects.toMatchObject({
       code: "VALIDATION_ERROR",
     });
