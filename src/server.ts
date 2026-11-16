@@ -201,7 +201,7 @@ export function serverGetJson<T = unknown>(
 }
 
 function positiveIntegerFlag(args: string[], name: string): number | undefined {
-  let first: number | undefined;
+  let last: number | undefined;
   for (let i = 0; i < args.length; i++) {
     const arg = args[i];
     if (arg !== name && !arg.startsWith(`${name}=`)) continue;
@@ -216,9 +216,9 @@ function positiveIntegerFlag(args: string[], name: string): number | undefined {
         [`Use ${name} <positive-integer>`],
       );
     }
-    first ??= number;
+    last = number;
   }
-  return first;
+  return last;
 }
 
 /** Convert 1-based --page to the Server API's zero-based page. */
