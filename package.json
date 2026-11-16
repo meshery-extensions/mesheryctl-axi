@@ -1,6 +1,6 @@
 {
   "name": "mesheryctl-axi",
-  "version": "0.3.1",
+  "version": "0.3.4",
   "description": "AXI-compliant mesheryctl wrapper - token-efficient TOON output for agent workflows",
   "type": "module",
   "repository": {
@@ -21,6 +21,7 @@
   },
   "files": [
     "dist",
+    "skills",
     "LICENSE",
     "README.md"
   ],
@@ -29,6 +30,7 @@
   },
   "scripts": {
     "build": "tsc",
+    "build:skill": "tsx scripts/build-skill.ts",
     "test": "vitest run",
     "test:watch": "vitest",
     "dev": "tsx bin/mesheryctl-axi.ts",

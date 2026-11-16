@@ -1,5 +1,4 @@
 import {
-  getFlag,
   getFlagValues,
   getPositional,
   rejectUnknownFlags,
@@ -14,7 +13,7 @@ import {
   nextPage,
   serverGetJson,
 } from "../server.js";
-import { getSuggestions } from "../suggestions.js";
+import { getSuggestions, suggestionValue } from "../suggestions.js";
 import {
   emptyState,
   field,
@@ -95,22 +94,13 @@ function normalizeConnection(
   };
 }
 
-function suggestionValue(value: string): string {
-  return /^[A-Za-z0-9._:/-]+$/.test(value)
-    ? value
-    : `'${value.replaceAll("'", `'\\''`)}'`;
-}
-
 async function listConnections(args: string[]): Promise<string> {
   const schema = selectFields(args, listSchema, viewSchema, "connection list");
   const kinds = getFlagValues(args, ["--kind", "-k"]);
   const statuses = getFlagValues(args, ["--status", "-s"]);
   // Interim: mesheryctl connection list has no --output-format; use Server API
   // (same path as mesheryctl: api/integrations/connections). Never scrape tables.
-  const q = listQueryFromFlags({
-    page: getFlag(args, "--page"),
-    pagesize: getFlag(args, "--pagesize") ?? getFlag(args, "--limit"),
-  });
+  const q = listQueryFromFlags(args);
   const payload = await serverGetJson<Record<string, unknown>>({
     path: API.connections,
     query: {
