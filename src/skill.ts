@@ -1,25 +1,19 @@
-import { DESCRIPTION } from "./cli.js";
+import { DESCRIPTION } from './cli.js';
 
 // Trigger string Claude Code (and other agents) match against to auto-load the skill.
 // Kept terse and outcome-focused so it fires on "needs Meshery" intents.
 export const SKILL_DESCRIPTION =
-  "Operate Meshery through the mesheryctl-axi CLI - connections, system context and status, designs, models, and components with token-efficient TOON reporting. " +
-  "Use whenever a task touches Meshery: listing or viewing connections, checking system status or context, working with designs, models, or components, " +
-  "or invoking any other mesheryctl operation through the agent-ergonomic wrapper.";
+  'Operate Meshery through the mesheryctl-axi CLI - connections, system context and status, designs, models, and components with token-efficient TOON reporting. ' +
+  'Use whenever a task touches Meshery: listing or viewing connections, checking system status or context, working with designs, models, or components, ' +
+  'or invoking any other mesheryctl operation through the agent-ergonomic wrapper.';
 
-export const SKILL_AUTHOR = "Meshery Authors";
+export const SKILL_AUTHOR = 'Meshery Authors';
 
 // Extended frontmatter read by Nous Research's Hermes Agent harness
 // (https://hermes-agent.nousresearch.com/docs/user-guide/features/skills).
 // Harnesses that don't know these fields (e.g. Claude Code) ignore them.
-export const HERMES_TAGS = [
-  "meshery",
-  "kubernetes",
-  "service-mesh",
-  "cli",
-  "devops",
-];
-export const HERMES_CATEGORY = "devops";
+export const HERMES_TAGS = ['meshery', 'kubernetes', 'service-mesh', 'cli', 'devops'];
+export const HERMES_CATEGORY = 'devops';
 
 // Hard cap so a future regeneration cannot silently re-inflate the stub with
 // CLI-owned instructions. Home, `--help`, and per-command help are the
@@ -48,7 +42,7 @@ user-invocable: false
 author: ${SKILL_AUTHOR}
 metadata:
   hermes:
-    tags: [${HERMES_TAGS.join(", ")}]
+    tags: [${HERMES_TAGS.join(', ')}]
     category: ${HERMES_CATEGORY}
 ---
 

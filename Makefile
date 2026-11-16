@@ -16,7 +16,7 @@
 # layer5io/sistent's Makefile. `make` with no target lists the targets below.
 include build/Makefile.show-help.mk
 
-.PHONY: setup build tests dev
+.PHONY: setup build tests dev lint format-check
 
 ## Install mesheryctl-axi dependencies via npm ci
 setup:
@@ -29,6 +29,14 @@ build:
 ## Run the vitest suite
 tests:
 	npm run test
+
+## Lint TypeScript sources with ESLint
+lint:
+	npm run lint
+
+## Check Prettier formatting
+format-check:
+	npm run format:check
 
 ## Run the CLI from source, e.g. make dev ARGS="connection list"
 dev:
