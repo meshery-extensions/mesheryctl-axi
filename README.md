@@ -23,6 +23,7 @@ Agent-ergonomic [AXI](https://axi.md/) wrapper around [`mesheryctl`](https://doc
 
 Reporting in [TOON](https://toonformat.dev/) — a token-efficient serialization for tabular data — is a founding reason this wrapper exists: agents spend most of their Meshery tokens reading repeated list/view output, so the wrapper reshapes that reporting while leaving design and model content in canonical YAML/JSON.
 
+
 _The original design and scope [meshery/meshery#20979](https://github.com/meshery/meshery/issues/20979) follows the [`gh-axi`](https://github.com/kunchenguid/gh-axi) pattern by wrapping the human CLI instead of changing it._
 
 ## How to Use
@@ -35,7 +36,7 @@ npx -y mesheryctl-axi
 
 ### Prerequisites
 
-- **Node.js 22.13+ or 24+**
+- **Node.js >= 22**
 - **`mesheryctl` installed and authenticated.** This package spawns `mesheryctl`; it does not embed Meshery.
   - Install: https://docs.meshery.io/installation
   - Override the binary: `MESHERYCTL_BIN=/path/to/mesheryctl`
@@ -120,6 +121,9 @@ List commands query the Meshery Server API using the endpoint and token from the
 active context. They do not scrape tables or pass unsupported JSON flags to
 `mesheryctl`:
 
+Authenticated API requests require HTTPS for remote endpoints. Plain HTTP is
+allowed for loopback endpoints such as `localhost`, `127.0.0.1`, and `[::1]`.
+
 ```bash
 npx -y mesheryctl-axi connection list
 npx -y mesheryctl-axi connection list --kind kubernetes --status connected
@@ -163,15 +167,15 @@ A successful empty collection is definitive, for example `connections: 0`.
 Authentication, reachability, and server errors remain structured errors and
 must not be interpreted as empty results.
 
-| Output                                  | Contract                                                                               |
-| --------------------------------------- | -------------------------------------------------------------------------------------- |
-| List, view, system, and error reporting | [TOON](https://toonformat.dev/) for concise agent use                                  |
-| `design content` and `model content`    | Raw YAML or JSON; never [TOON](https://toonformat.dev/)-wrapped content                |
-| Empty collections                       | A definitive count such as `connections: 0`                                            |
-| List aggregates                         | Current-page `count`, source `total` when available, and a connection status breakdown |
-| Field control                           | `--fields <field,...>` selects known fields; `--full` uses the full known schema       |
-| Successful reporting commands           | End with contextual `help[]` suggestions                                               |
-| Successful content commands             | Return only raw YAML or JSON, without `help[]`                                         |
+| Output | Contract |
+| --- | --- |
+| List, view, system, and error reporting | [TOON](https://toonformat.dev/) for concise agent use |
+| `design content` and `model content` | Raw YAML or JSON; never [TOON](https://toonformat.dev/)-wrapped content |
+| Empty collections | A definitive count such as `connections: 0` |
+| List aggregates | Current-page `count`, source `total` when available, and a connection status breakdown |
+| Field control | `--fields <field,...>` selects known fields; `--full` uses the full known schema |
+| Successful reporting commands | End with contextual `help[]` suggestions |
+| Successful content commands | Return only raw YAML or JSON, without `help[]` |
 
 #### Example session
 
@@ -278,14 +282,14 @@ make dev ARGS="model content <name> --format json"
 
 ### Design notes
 
-| Concern                       | Behavior                                                         |
-| ----------------------------- | ---------------------------------------------------------------- |
-| List / view / system metadata | [TOON](https://toonformat.dev/)                                  |
-| Design / model **content**    | Raw YAML or JSON only; no `help[]` suffix                        |
-| Unknown flags                 | Non-zero exit + structured [TOON](https://toonformat.dev/) error |
-| Empty results                 | Definitive empty states (e.g. `connections: 0`)                  |
-| Reporting success             | Includes contextual `help[]` suggestions                         |
-| Interactivity                 | Always non-interactive (no TTY prompts)                          |
+| Concern | Behavior |
+| --- | --- |
+| List / view / system metadata | [TOON](https://toonformat.dev/) |
+| Design / model **content** | Raw YAML or JSON only; no `help[]` suffix |
+| Unknown flags | Non-zero exit + structured [TOON](https://toonformat.dev/) error |
+| Empty results | Definitive empty states (e.g. `connections: 0`) |
+| Reporting success | Includes contextual `help[]` suggestions |
+| Interactivity | Always non-interactive (no TTY prompts) |
 
 ### Commands (v1)
 
