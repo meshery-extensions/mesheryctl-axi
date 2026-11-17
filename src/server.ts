@@ -1,6 +1,6 @@
-import { isIP } from "node:net";
-import { AxiError } from "./errors.js";
-import { loadMesheryAuth, type ResolvedMesheryAuth } from "./config.js";
+import { isIP } from 'node:net';
+import { AxiError } from './errors.js';
+import { loadMesheryAuth, type ResolvedMesheryAuth } from './config.js';
 
 export type ServerGetOptions = {
   path: string;
@@ -80,10 +80,10 @@ export function nextPage(
 /** True when the host resolves to this machine: localhost, 127.0.0.0/8, or ::1. */
 export function isLoopbackHost(hostname: string): boolean {
   // URL.hostname keeps IPv6 brackets, e.g. "[::1]".
-  const host = hostname.toLowerCase().replace(/^\[(.*)\]$/, "$1");
-  if (host === "localhost") return true;
-  if (isIP(host) === 4) return host.startsWith("127.");
-  if (isIP(host) === 6) return host === "::1";
+  const host = hostname.toLowerCase().replace(/^\[(.*)\]$/, '$1');
+  if (host === 'localhost') return true;
+  if (isIP(host) === 4) return host.startsWith('127.');
+  if (isIP(host) === 6) return host === '::1';
   return false;
 }
 
@@ -96,20 +96,18 @@ function assertSecureEndpoint(endpoint: string): void {
   try {
     url = new URL(endpoint);
   } catch {
-    throw new AxiError(
-      `Invalid Meshery endpoint: ${endpoint}`,
-      "VALIDATION_ERROR",
-      ["Check `mesheryctl system context view` endpoint"],
-    );
+    throw new AxiError(`Invalid Meshery endpoint: ${endpoint}`, 'VALIDATION_ERROR', [
+      'Check `mesheryctl system context view` endpoint',
+    ]);
   }
-  if (url.protocol === "https:") return;
-  if (url.protocol === "http:" && isLoopbackHost(url.hostname)) return;
+  if (url.protocol === 'https:') return;
+  if (url.protocol === 'http:' && isLoopbackHost(url.hostname)) return;
   throw new AxiError(
     `Refusing to send Meshery credentials over cleartext ${url.protocol}//${url.host}`,
-    "VALIDATION_ERROR",
+    'VALIDATION_ERROR',
     [
-      "Point the mesheryctl context at an https:// endpoint",
-      "Or use a loopback endpoint (localhost / 127.0.0.1) for a local Meshery",
+      'Point the mesheryctl context at an https:// endpoint',
+      'Or use a loopback endpoint (localhost / 127.0.0.1) for a local Meshery',
     ],
   );
 }
@@ -151,6 +149,9 @@ export async function serverRequestJson<T = unknown>(options: ServerRequestOptio
     process.env['MESHERY_ENDPOINT']?.replace(/\/$/, '') ??
     'http://localhost:9081';
 
+  // Before buildUrl, so a bad endpoint gets the readable error, not a TypeError.
+  if (!options.anonymous && auth) assertSecureEndpoint(endpoint);
+
   const url = buildUrl(endpoint, options.path, options.query);
   const headers: Record<string, string> = {
     Accept: 'application/json',
@@ -159,7 +160,6 @@ export async function serverRequestJson<T = unknown>(options: ServerRequestOptio
     headers['Content-Type'] = 'application/json';
   }
   if (!options.anonymous && auth) {
-    assertSecureEndpoint(endpoint);
     // Cookie names match mesheryctl pkg/utils AddAuthDetails.
     headers['Cookie'] = `token=${auth.tokenValue}; meshery-provider=${auth.providerValue}`;
   }
