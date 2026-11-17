@@ -1,3 +1,4 @@
+import { isIP } from "node:net";
 import { AxiError } from "./errors.js";
 import { loadMesheryAuth, type ResolvedMesheryAuth } from "./config.js";
 
@@ -78,6 +79,43 @@ export function nextPage(
   return hasMore ? page + 2 : undefined;
 }
 
+/** True when the host resolves to this machine: localhost, 127.0.0.0/8, or ::1. */
+export function isLoopbackHost(hostname: string): boolean {
+  // URL.hostname keeps IPv6 brackets, e.g. "[::1]".
+  const host = hostname.toLowerCase().replace(/^\[(.*)\]$/, "$1");
+  if (host === "localhost") return true;
+  if (isIP(host) === 4) return host.startsWith("127.");
+  if (isIP(host) === 6) return host === "::1";
+  return false;
+}
+
+/**
+ * Refuse to send auth cookies in cleartext to a non-loopback host (CWE-319).
+ * HTTPS is always allowed; plain HTTP only for local Meshery deployments.
+ */
+function assertSecureEndpoint(endpoint: string): void {
+  let url: URL;
+  try {
+    url = new URL(endpoint);
+  } catch {
+    throw new AxiError(
+      `Invalid Meshery endpoint: ${endpoint}`,
+      "VALIDATION_ERROR",
+      ["Check `mesheryctl system context view` endpoint"],
+    );
+  }
+  if (url.protocol === "https:") return;
+  if (url.protocol === "http:" && isLoopbackHost(url.hostname)) return;
+  throw new AxiError(
+    `Refusing to send Meshery credentials over cleartext ${url.protocol}//${url.host}`,
+    "VALIDATION_ERROR",
+    [
+      "Point the mesheryctl context at an https:// endpoint",
+      "Or use a loopback endpoint (localhost / 127.0.0.1) for a local Meshery",
+    ],
+  );
+}
+
 /**
  * GET JSON from Meshery Server using the same cookie auth mesheryctl uses.
  * List paths use this interim bridge until mesheryctl lists support -o json
@@ -104,6 +142,7 @@ export async function serverGetJson<T = unknown>(
     Accept: "application/json",
   };
   if (!options.anonymous && auth) {
+    assertSecureEndpoint(endpoint);
     // Cookie names match mesheryctl pkg/utils AddAuthDetails.
     headers["Cookie"] =
       `token=${auth.tokenValue}; meshery-provider=${auth.providerValue}`;
