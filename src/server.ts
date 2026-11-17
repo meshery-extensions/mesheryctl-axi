@@ -1,3 +1,4 @@
+import { isIP } from 'node:net';
 import { loadMesheryAuth, type ResolvedMesheryAuth } from './config.js';
 import { AxiError } from './errors.js';
 
@@ -76,6 +77,43 @@ export function nextPage(
   return hasMore ? page + 2 : undefined;
 }
 
+/** True when the host resolves to this machine: localhost, 127.0.0.0/8, or ::1. */
+export function isLoopbackHost(hostname: string): boolean {
+  // URL.hostname keeps IPv6 brackets, e.g. "[::1]".
+  const host = hostname.toLowerCase().replace(/^\[(.*)\]$/, '$1');
+  // 'localhost.' (trailing-dot root form) is still localhost; the old
+  // inline check accepted it, so keep accepting it here.
+  if (host === 'localhost' || host === 'localhost.') return true;
+  if (isIP(host) === 4) return host.startsWith('127.');
+  if (isIP(host) === 6) return host === '::1';
+  return false;
+}
+
+/**
+ * Refuse to send auth cookies in cleartext to a non-loopback host (CWE-319).
+ * HTTPS is always allowed; plain HTTP only for local Meshery deployments.
+ */
+function assertSecureEndpoint(endpoint: string): void {
+  let url: URL;
+  try {
+    url = new URL(endpoint);
+  } catch {
+    throw new AxiError(`Invalid Meshery endpoint: ${endpoint}`, 'VALIDATION_ERROR', [
+      'Check `mesheryctl system context view` endpoint',
+    ]);
+  }
+  if (url.protocol === 'https:') return;
+  if (url.protocol === 'http:' && isLoopbackHost(url.hostname)) return;
+  throw new AxiError(
+    `Refusing to send Meshery credentials over cleartext ${url.protocol}//${url.host}`,
+    'VALIDATION_ERROR',
+    [
+      'Point the mesheryctl context at an https:// endpoint',
+      'Or use a loopback endpoint (localhost / 127.0.0.1) for a local Meshery',
+    ],
+  );
+}
+
 /**
  * Readable text for a failed request. Meshery reports failures as a MeshKit
  * JSON error whose useful reason is in longDescription, so prefer that over
@@ -113,6 +151,9 @@ export async function serverRequestJson<T = unknown>(options: ServerRequestOptio
     process.env['MESHERY_ENDPOINT']?.replace(/\/$/, '') ??
     'http://localhost:9081';
 
+  // Before buildUrl, so a bad endpoint gets the readable error, not a TypeError.
+  if (!options.anonymous && auth) assertSecureEndpoint(endpoint);
+
   const url = buildUrl(endpoint, options.path, options.query);
   const headers: Record<string, string> = {
     Accept: 'application/json',
@@ -121,20 +162,6 @@ export async function serverRequestJson<T = unknown>(options: ServerRequestOptio
     headers['Content-Type'] = 'application/json';
   }
   if (!options.anonymous && auth) {
-    const target = new URL(url);
-    const host = target.hostname;
-    const loopback =
-      host === 'localhost' ||
-      host === 'localhost.' ||
-      host === '[::1]' ||
-      /^127(?:\.\d{1,3}){3}$/.test(host);
-    if (target.protocol !== 'https:' && !(target.protocol === 'http:' && loopback)) {
-      throw new AxiError(
-        'Authenticated Meshery Server requests require HTTPS for non-loopback endpoints',
-        'VALIDATION_ERROR',
-        ['Configure an HTTPS endpoint in `mesheryctl system context`'],
-      );
-    }
     // Cookie names match mesheryctl pkg/utils AddAuthDetails.
     headers['Cookie'] = `token=${auth.tokenValue}; meshery-provider=${auth.providerValue}`;
   }
