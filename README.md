@@ -23,7 +23,6 @@ Agent-ergonomic [AXI](https://axi.md/) wrapper around [`mesheryctl`](https://doc
 
 Reporting in [TOON](https://toonformat.dev/) — a token-efficient serialization for tabular data — is a founding reason this wrapper exists: agents spend most of their Meshery tokens reading repeated list/view output, so the wrapper reshapes that reporting while leaving design and model content in canonical YAML/JSON.
 
-
 _The original design and scope [meshery/meshery#20979](https://github.com/meshery/meshery/issues/20979) follows the [`gh-axi`](https://github.com/kunchenguid/gh-axi) pattern by wrapping the human CLI instead of changing it._
 
 ## How to Use
@@ -36,7 +35,7 @@ npx -y mesheryctl-axi
 
 ### Prerequisites
 
-- **Node.js >= 22**
+- **Node.js 22.13+ or 24+**
 - **`mesheryctl` installed and authenticated.** This package spawns `mesheryctl`; it does not embed Meshery.
   - Install: https://docs.meshery.io/installation
   - Override the binary: `MESHERYCTL_BIN=/path/to/mesheryctl`
@@ -49,7 +48,7 @@ Use this sequence when setting up an agent or preparing a machine for an agent t
 
 Before starting, confirm that:
 
-- Node.js 22 or newer is installed.
+- Node.js 22.13+ or 24+ is installed.
 - `mesheryctl` is installed.
 - A Meshery Server is reachable.
 - The active `mesheryctl` context is authenticated.
@@ -121,6 +120,9 @@ List commands query the Meshery Server API using the endpoint and token from the
 active context. They do not scrape tables or pass unsupported JSON flags to
 `mesheryctl`:
 
+Authenticated API requests require HTTPS for remote endpoints. Plain HTTP is
+allowed for loopback endpoints such as `localhost`, `127.0.0.1`, and `[::1]`.
+
 ```bash
 npx -y mesheryctl-axi connection list
 npx -y mesheryctl-axi connection list --kind kubernetes --status connected
@@ -131,19 +133,48 @@ npx -y mesheryctl-axi model list
 npx -y mesheryctl-axi component list
 ```
 
+`design import` wraps `mesheryctl design import` and returns the new design's
+full ID (mesheryctl prints only its first 8 characters) and component count:
+
+```bash
+npx -y mesheryctl-axi design import -f app.yaml -s manifest -n my-app
+npx -y mesheryctl-axi design import -f https://example.com/chart.tgz -s helm
+```
+
+`-s` accepts `design`, `manifest`, `helm`, or `compose`. Without `-n`, the
+design is named after the file.
+
+`design evaluate`, `design deploy`, and `design undeploy` take a design name or
+ID and report through the Meshery Server API, because `mesheryctl` has no
+dry-run or context flag and prints evaluation actions only as text:
+
+```bash
+npx -y mesheryctl-axi design evaluate my-app
+npx -y mesheryctl-axi design deploy my-app --dry-run
+npx -y mesheryctl-axi design deploy my-app --context minikube
+npx -y mesheryctl-axi design undeploy my-app --context minikube
+```
+
+`--context` takes a Kubernetes context name, context ID, or connection ID, and
+may be omitted when only one cluster is connected. If any component fails, the
+per-component `results[]` are still printed, followed by a `PARTIAL_FAILURE`
+error and a non-zero exit. A dry run reports one result per component display
+name, so a component that shares its name with another is listed with
+`success: null` and counted as `unverified`, not as passed.
+
 A successful empty collection is definitive, for example `connections: 0`.
 Authentication, reachability, and server errors remain structured errors and
 must not be interpreted as empty results.
 
-| Output | Contract |
-| --- | --- |
-| List, view, system, and error reporting | [TOON](https://toonformat.dev/) for concise agent use |
-| `design content` and `model content` | Raw YAML or JSON; never [TOON](https://toonformat.dev/)-wrapped content |
-| Empty collections | A definitive count such as `connections: 0` |
-| List aggregates | Current-page `count`, source `total` when available, and a connection status breakdown |
-| Field control | `--fields <field,...>` selects known fields; `--full` uses the full known schema |
-| Successful reporting commands | End with contextual `help[]` suggestions |
-| Successful content commands | Return only raw YAML or JSON, without `help[]` |
+| Output                                  | Contract                                                                               |
+| --------------------------------------- | -------------------------------------------------------------------------------------- |
+| List, view, system, and error reporting | [TOON](https://toonformat.dev/) for concise agent use                                  |
+| `design content` and `model content`    | Raw YAML or JSON; never [TOON](https://toonformat.dev/)-wrapped content                |
+| Empty collections                       | A definitive count such as `connections: 0`                                            |
+| List aggregates                         | Current-page `count`, source `total` when available, and a connection status breakdown |
+| Field control                           | `--fields <field,...>` selects known fields; `--full` uses the full known schema       |
+| Successful reporting commands           | End with contextual `help[]` suggestions                                               |
+| Successful content commands             | Return only raw YAML or JSON, without `help[]`                                         |
 
 #### Example session
 
@@ -250,14 +281,14 @@ make dev ARGS="model content <name> --format json"
 
 ### Design notes
 
-| Concern | Behavior |
-| --- | --- |
-| List / view / system metadata | [TOON](https://toonformat.dev/) |
-| Design / model **content** | Raw YAML or JSON only; no `help[]` suffix |
-| Unknown flags | Non-zero exit + structured [TOON](https://toonformat.dev/) error |
-| Empty results | Definitive empty states (e.g. `connections: 0`) |
-| Reporting success | Includes contextual `help[]` suggestions |
-| Interactivity | Always non-interactive (no TTY prompts) |
+| Concern                       | Behavior                                                         |
+| ----------------------------- | ---------------------------------------------------------------- |
+| List / view / system metadata | [TOON](https://toonformat.dev/)                                  |
+| Design / model **content**    | Raw YAML or JSON only; no `help[]` suffix                        |
+| Unknown flags                 | Non-zero exit + structured [TOON](https://toonformat.dev/) error |
+| Empty results                 | Definitive empty states (e.g. `connections: 0`)                  |
+| Reporting success             | Includes contextual `help[]` suggestions                         |
+| Interactivity                 | Always non-interactive (no TTY prompts)                          |
 
 ### Commands (v1)
 
@@ -265,7 +296,7 @@ make dev ARGS="model content <name> --format json"
 mesheryctl-axi                        # home
 mesheryctl-axi connection list|view
 mesheryctl-axi system status|context
-mesheryctl-axi design list|view|content
+mesheryctl-axi design list|view|content|import|evaluate|deploy|undeploy
 mesheryctl-axi model list|view|content
 mesheryctl-axi component list|view
 ```

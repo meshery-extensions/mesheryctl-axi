@@ -1,7 +1,8 @@
-import { componentViewArgv } from "./commands/component.js";
-import { connectionViewArgv } from "./commands/connection.js";
-import { designViewArgv } from "./commands/design.js";
-import { modelViewArgv } from "./commands/model.js";
+import { componentViewArgv } from './commands/component.js';
+import { connectionViewArgv } from './commands/connection.js';
+import { designImportArgv, designViewArgv } from './commands/design.js';
+import { modelImportArgv } from './commands/model-import.js';
+import { modelViewArgv } from './commands/model.js';
 
 /**
  * One wrapper-to-`mesheryctl` call the contract suite checks against a real
@@ -20,41 +21,33 @@ export interface MesheryctlContractCase {
   argv: string[];
 }
 
-function viewCase(
-  axi: string,
-  path: string[],
-  argv: string[],
-): MesheryctlContractCase {
-  return { axi, path, flags: ["--output-format"], argv };
+function viewCase(axi: string, path: string[], argv: string[]): MesheryctlContractCase {
+  return { axi, path, flags: ['--output-format'], argv };
 }
 
 /**
  * Every argv this package sends to the `mesheryctl` binary. Lists, status,
  * and context go through the Server API or local config instead (see #5), so
- * only `view` calls appear here. Add a case here whenever a command starts
+ * only `view` and `import` calls appear here. Add a case here whenever a command starts
  * spawning a new `mesheryctl` subcommand or flag.
  */
 export const MESHERYCTL_CONTRACT_CASES: MesheryctlContractCase[] = [
-  viewCase("design view", ["design", "view"], designViewArgv("<name>", "json")),
-  viewCase(
-    "design content",
-    ["design", "view"],
-    designViewArgv("<name>", "yaml"),
-  ),
-  viewCase("model view", ["model", "view"], modelViewArgv("<name>", "json")),
-  viewCase(
-    "model content",
-    ["model", "view"],
-    modelViewArgv("<name>", "yaml"),
-  ),
-  viewCase(
-    "component view",
-    ["component", "view"],
-    componentViewArgv("<name>", "json"),
-  ),
-  viewCase(
-    "connection view",
-    ["connection", "view"],
-    connectionViewArgv("<id>", "json"),
-  ),
+  {
+    axi: 'model import',
+    path: ['model', 'import'],
+    flags: ['--file'],
+    argv: modelImportArgv(['-f', './my model']),
+  },
+  viewCase('design view', ['design', 'view'], designViewArgv('<name>', 'json')),
+  viewCase('design content', ['design', 'view'], designViewArgv('<name>', 'yaml')),
+  {
+    axi: 'design import',
+    path: ['design', 'import'],
+    flags: ['--file', '--source-type', '--name'],
+    argv: designImportArgv('<file|url>', 'Kubernetes Manifest', '<name>'),
+  },
+  viewCase('model view', ['model', 'view'], modelViewArgv('<name>', 'json')),
+  viewCase('model content', ['model', 'view'], modelViewArgv('<name>', 'yaml')),
+  viewCase('component view', ['component', 'view'], componentViewArgv('<name>', 'json')),
+  viewCase('connection view', ['connection', 'view'], connectionViewArgv('<id>', 'json')),
 ];
