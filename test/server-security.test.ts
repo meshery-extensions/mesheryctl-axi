@@ -28,7 +28,7 @@ afterEach(() => {
 });
 
 describe('isLoopbackHost', () => {
-  it.each(['localhost', 'LOCALHOST', '127.0.0.1', '127.1.2.3', '[::1]', '::1'])(
+  it.each(['localhost', 'LOCALHOST', 'localhost.', '127.0.0.1', '127.1.2.3', '[::1]', '::1'])(
     '%s is loopback',
     (host) => expect(isLoopbackHost(host)).toBe(true),
   );

@@ -81,7 +81,9 @@ export function nextPage(
 export function isLoopbackHost(hostname: string): boolean {
   // URL.hostname keeps IPv6 brackets, e.g. "[::1]".
   const host = hostname.toLowerCase().replace(/^\[(.*)\]$/, '$1');
-  if (host === 'localhost') return true;
+  // 'localhost.' (trailing-dot root form) is still localhost; the old
+  // inline check accepted it, so keep accepting it here.
+  if (host === 'localhost' || host === 'localhost.') return true;
   if (isIP(host) === 4) return host.startsWith('127.');
   if (isIP(host) === 6) return host === '::1';
   return false;
