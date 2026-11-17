@@ -1,6 +1,6 @@
 import { isIP } from 'node:net';
-import { AxiError } from './errors.js';
 import { loadMesheryAuth, type ResolvedMesheryAuth } from './config.js';
+import { AxiError } from './errors.js';
 
 export type ServerGetOptions = {
   path: string;
